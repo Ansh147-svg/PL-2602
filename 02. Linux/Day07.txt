@@ -1,0 +1,92 @@
+Day 07 | 06-04-2025 
+=====================================================
+=====================
+Module 1: Linux OS
+=====================
+# Show current time in IST
+TZ="Asia/Kolkata" date
+
+=> AWK
+Aho Weinberger Kernighan
+
+It is a text processing language
+It is designed for working with columns and rows
+Especially suits for log data, csv files...
+
+Apr  6 10:21:45 ip-172-31-12-45 systemd[1]: Started Docker Application Container Engine.
+
+awk '{print $0}' server.log (or) cat server.log
+awk '{print $1}' server.log
+awk '{print $2}' server.log
+awk '{print $5}' server.log
+
+awk '{print $1, $2}' server.log
+
+awk '$2 > 50 {print $1, $2}' log.txt
+
+=> Package Managers
+yum install git -y
+yum install maven -y
+
+Package means a software
+Amazon Linux 2023 AMI		------> yum (older), dnf (newer)
+Ubuntu						------> apt
+
+=> systemctl
+systemctl is used to manage services in VMs
+we can start, stop, update, re-start, enable, reload any services using systemctl command
+
+Web servers & App servers
+Apache	- 80			- /var/www/html
+Nginx	- 80			- /usr/share/nginx/html
+Tomcat	- 8080
+JBoss....
+
+=> Networking Commands
+ping
+ping www.google.com
+ping 142.251.156.119
+
+curl - is used to send the http request to an url
+
+ifconfig
+
+wget - to download the files from internet to ec2 instance
+
+=> Transferring files from EC2 instance to Local (laptop) & Vice-versa
+
+
+=====================
+Module 2: Git and GitHub 
+=====================
+
+https://git-scm.com/install/windows
+
+$ git config --global user.name "KastroKiran"
+
+$ git config user.name
+
+$ git config --global user.email "learnwithkastro@gmail.com"
+
+$ git config user.email
+
+Git configuration is one time activity
+
+Note: All the commands in git will start with "git"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
