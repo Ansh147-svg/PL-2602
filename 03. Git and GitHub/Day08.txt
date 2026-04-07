@@ -1,0 +1,185 @@
+Day 07 | 06-04-2025 
+=====================================================
+=====================
+Module 2: Git & GitHub
+=====================
+
+
+								git add <file-name>				git commit -m "new file created" file1.txt			
+file1.txt -----> WorkingDirectory --------------------------------------> Staging Area	--------------------------------> Local Repo Area	--------------------> Remote Repo Area
+
+working tree clean
+
+  496  git config --global user.name "KastroKiran"
+  497  git config user.name
+  498  git config --global user.email "learnwithkastro@gmail.co
+  499  git config user.email
+  500  git config --list
+  501  git config user.name
+  502  git config user.email
+  503  git init
+  504  touch file1.txt
+  505  git status
+  506  git add file1.txt
+  507  git status
+  508  git commit -m "new file created" file1.txt
+  509  git status
+  510  git status
+  511  ls
+  512  vi file1.txt
+  513  cat file1.txt
+  514  git status
+  515  git add file1.txt
+  516  git status
+  517  git commit -m "added line 1" file1.txt
+  518  clear
+  519  ls
+  520  git status
+  521  vi file1.txt
+  522  git status
+  523  git add file1.txt
+  524  git status
+  525  git commit -m "added line2" file1.txt
+  526  git status
+  527  vi file1.txt
+  528  git status
+  529  git add file1.txt
+  530  git status
+  531  git commit -m "added additional lines" file1.txt
+  532  git status
+  533  vi file1.txt
+  534  git status
+  535  git commit -m "deleted 5th line" file1.txt
+  536  git status
+  537  clear
+  538  ls
+  539  touch kastro{1..5}.py
+  540  ls
+  541  git status
+  542  vi file1.txt
+  543  git status
+  544  git add file1.txt
+  545  git status
+  546  git commit -m "added new line - line5" file1.txt
+  547  pwd
+  548  ls
+  549  git status
+  550  git add kastro1.py
+  551  git status
+  552  git commit -m "1st python file" kastro1.py
+  553  git status
+  554  clear
+  555  git status
+  556  touch netflix{1..5}.java
+  557  ls
+  558  git status
+  559  touch kiran6.py
+  560  git status
+  561  git add kastro*
+  562  git status
+  563  git commit -m "2,3,4,5 kastro python files" kastro*
+  564  git status
+  565  git add .
+  566  git status
+  567  git commit -m "java and 6th python file" netflix* kiran6.py
+  568  ls
+  569  git status
+  570  ls
+  571  vi file1.txt
+  572  vi file1.txt
+  573  vi kastro1.py
+
+=> git log
+    3  git log
+    4  git log --oneline
+    5  git log
+    6  git log --oneline
+    7  git log --oneline -3
+    8  git log --oneline -5
+    9  git log 4abe3d8..bbc049c
+
+=> git show
+   11  git show
+   12  vi netflix1.java
+   13  git add .
+   14  git commit -m "added netfilix java code" netflix1.java
+   15  git log --oneline
+
+=> git show
+   16  git show
+   17  git show 2ec2f71
+   18  vi netflix1.java
+   19  git add .
+   20  git commit -m "deleted the first line" netflix1.java
+   21  git show
+
+=> changes made b/w two commits
+git log -p -2
+
+git log --stat
+
+git diff 4abe3d8..bbc049c
+
+git shortlog
+
+git log --pretty=oneline
+
+git log --pretty=format:"%h-%an, %ar:%s"
+
+git log --oneline --author="KastroKiran"
+
+git blame file1.txt
+
+=> Creation of GitHub account
+
+=> Repositories concept
+We can create two types of repos based on visibility;
+	1. Public Repo	- anything that we keep in this can be accessed by anyone on the internet
+	2. Private Repo	- anything that we keep in this cannot be accessed by anyone, until explicit permissions are provided
+
+For every repo, we will get unique repo URL
+
+=> Sending the files from local to remote repo
+
+=> Getting the code from remote to local
+		git clone - to get the complete copy of the code from remote to local
+
+  480  git push
+  481  git remote add origin https://github.com/deepasingh123/my-first-repo.git
+  482  git push -u origin master
+  483  git push -u origin master
+  484  ls
+  485  git log --oneline
+  486  ls
+  487  touch deepa.txt
+  488  git status
+  489  git add .
+  490  git commit -m "deepas text file" deepa.txt
+  491  git status
+  492  git push
+  493  git log --oneline
+  494  vi deepa.txt
+  495  git statis
+  496  git status
+  497  git add .
+  498  git commit -m "added java line" deepa.txt
+  499  git push
+  500  cat deepa.txt
+  501  git clone https://github.com/deepasingh123/my-first-repo.git
+  502  ls
+  503  cd my-first-repo/
+  504  ls
+  505  cat deepa.txt
+  506  ls
+  507  vi sonali.py
+  508  git status
+  509  git add .
+  510  git commit -m "sonalis python file" sonali.py
+
+
+
+
+
+
+
+
