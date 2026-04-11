@@ -42,3 +42,5 @@ A structured **DevOps + AWS learning journey** divided into 3 powerful phases:
 | **06 Apr** | Linux Fundamentals | Linux Commands_Part 5 | ✅ Completed |
 | **06 Apr** | Git & GitHub | Introduction to Git and GitHub_Part 1 | ✅ Completed |
 | **07 Apr** | Git & GitHub | Working with Git_Part 2 | ✅ Completed |
+| **09 Apr** | Git & GitHub | Working with Git_Part 3 | ✅ Completed |
+| **10 Apr** | Git & GitHub | Working with Git_Part 4 | ✅ Completed |
