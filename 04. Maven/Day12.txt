@@ -1,0 +1,138 @@
+Day 09 | 13-04-2025 
+=====================================================
+=====================
+Module 3: Maven
+=====================
+Compiled Languages - Java, Go
+Interpreted Languages - Python, C++
+
+Maven is a build tool which is used to create the initial project folder structure to develop the source code of the application
+Based on the programming languages, we have different build tools;
+	Java	--- Maven		--- 90% used
+	Python	--- PyBuilder		--- 5%
+	Ruby	--- Rakes
+	.net		--- MS Build		--- 5%
+
+....ant, gradle...
+
+In the project, developers will write the source code of the application. that source code should be compiled before execution. that compilation of the project/code will be done by using Maven.
+Compilation is done by DevOps Engineers.
+
+Maven is used for java based projects, that is why Maven is also known as Java Build Tool.
+If you want to work with maven, we need to install java in the machine (VM)
+Maven is an open-source s/w and is free of cost.
+
+How maven is used by Developers and DevOps Engineers?
+Using maven, we can create the initial project folder structure - developers view point
+
+2. Using maven we can download the 'dependencies' required for a projects - developers view point
+What is a dependency?
+Chicken Biryani	------> Chicken, Basmati Rice	- Primary ingredients
+				------> Curry leaves, masala...	- Secondary ingredients (dependencies)
+
+Netflix		----> Primary tool	----> Java
+			----> Secondary tools 	----> spring boot, spring context - frameworks - dependencies
+
+How can maven download a dependency?
+pom.xml - all the dependencies whatever are required to develop a project, we need to configure them in the pom.xml file
+pom - project object model
+xml - extension markup language
+
+How pom.xml will get created?
+When we create initial project folder structure using maven, by default the pom.xml will be available
+
+How developers will configure the dependencies in the pom.xml file?
+https://mvnrepository.com/
+
+<!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <version>4.0.5</version>
+    <scope>test</scope>
+</dependency>
+
+3. Using maven we can compile the source code of the application - DevOps engineers view point
+Any java files will have an extension as .java
+.java files consists of source code of the application, which will be available in the human understandable format
+but machines can understand only binary language (0s and 1s)
+you need to convert the human understandable format to machine understandable format - Compilation
+compilation can be done using maven
+
+					compile									exeute
+netflix.java	--------------------------------------> netflix.class	-------------------------------------> JVM	-----------------------------> output
+
+4. When we have multiple .java files, using maven we need to package all the .java files as a single file - DevOps engineers view point
+Once the packaging is done, we will deploy the packaged file into the servers.
+
+Building the code - the process of compilation and packaging
+
+Once the code is compiled and packaged, we will get the final file which is known as ARTIFACT
+
+The type of artifact depends on the type of application;
+	1. Standalone app	---- .jar file (Java Archive)
+	2. Web app			---- .war file (Web Archive)
+	3. Enterprise app		---- .ear file (Enterprise Archive)
+
+
+=> Creation of Standalone App
+mvn archetype:generate -DgroupId=com.example -DartifactId=standalone-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+standalone-app/
+└── standalone-app
+    ├── pom.xml
+    └── src
+        ├── main
+        │   └── java
+        │       └── com
+        │           └── example
+        │               └── App.java
+        └── test
+            └── java
+                └── com
+                    └── example
+                        └── AppTest.java
+
+
+=> Creation of Web App
+mvn archetype:generate -DgroupId=com.example -DartifactId=web-app -DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false
+
+web-app/
+└── web-app
+    ├── pom.xml
+    └── src
+        └── main
+            ├── resources
+            └── webapp
+                ├── WEB-INF
+                │   └── web.xml
+                └── index.jsp
+
+=> Maven Terminologies
+  <groupId>com.example</groupId>
+It represents the company name or project name
+  <groupId>IBM-Netflix</groupId>
+
+
+  <artifactId>standalone-app</artifactId>
+It represents the project name or project module name
+  <artifactId>Netflix</artifactId>
+OR
+  <artifactId>Netflix-Movies</artifactId>
+
+
+  <packaging>jar</packaging>
+It represents how you want to package the code - your final artifact
+
+
+  <version>1.0-SNAPSHOT</version>
+the current version of the application
+	- SNAPSHOT ---- this means application is still in the development phase
+	- RELEASE ---- the application is ready to deploy
+	- 1.0.0 ---- the application is ready to deploy
+
+
+=> How maven downloads the dependencies from the pom.xml?
+=> Maven Repositories
+=> Maven Goals/Commands
+=> Deployment of Java Application
