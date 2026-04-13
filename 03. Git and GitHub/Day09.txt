@@ -1,0 +1,73 @@
+Day 08 | 09-04-2025 
+=====================================================
+=====================
+Module 2: Git & GitHub
+=====================
+
+=> Git Pull
+It will pull only the changes available in the remote repo
+
+=> forking a repo
+to get the complete copy of the code from someone's remote repo to your remote repo
+
+=> fork sync
+
+=> Changing the commit message
+git commit --amend -m "my fifth commit"
+
+git reflog
+
+git reset --hard HEAD@{1}
+
+git log --oneline
+  526  git commit --amend -m "my fifth commit"
+  527  git log --oneline
+  528  git reflog
+  529  git reset --hard HEAD@{1}
+  530  git log --oneline
+  531  git log --oneline
+  532  git rebase -i --root
+  533  git log --oneline
+  534  rm -rf .git/rebase-merge/
+  535  git log --oneline
+  536  git log --oneline
+  537  git rebase -i --root
+  538  git log --oneline
+  539  rm -rf .git/rebase-merge/
+  540  git log --oneline
+  541  git rebase -i --root
+  542  rm -rf .git/rebase-merge/
+
+
+=> Git Branches
+
+main ----> main.txt
+Switch to movies branch (git checkout movies)
+	movies branch -----> 
+Note: Whenever we switch from existing branch to a newly created branch (for the first time), whatever files that are there in the existing branch, all those files will automatically comes into the newly created branch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

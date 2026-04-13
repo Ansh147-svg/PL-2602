@@ -1,0 +1,63 @@
+Day 09 | 13-04-2025 
+=====================================================
+=====================
+Module 2: Git & GitHub
+=====================
+=> git checkout - Roll Back
+
+5272ef1 (HEAD -> master) version3	- v1,v2,v3
+817510f version2						- v1,v2
+e5227fb version1						- v1
+
+git checkout e5227fb -- index.html
+
+git checkout e5227fb -- *
+
+=> git restore
+working
+add
+commit
+
+Case 1: how to restore a staged file (but not committed) - unstage a file (this applies if we dont have any commits)
+git reset index.html
+
+Case 2: (if we have atleast one commit) - to get the file from local repo area to staging area
+git restore --source=cc253e6 index.html
+
+Case 3:
+
+=> Recovering a deleted file
+Case 1: deleted the file, but not staged
+git restore hello.txt (or) git checkout -- <FileName>
+
+Case 2: deleted the file, and staged as well, but not committed
+git restore --staged hello.txt
+git restore hello.txt
+
+Case 3: deleted the file, staged as well and committed also
+git restore --source=209d0f5 -- hello.txt
+
+Case 4: If the file name is not known
+git log --diff-filter=D --summary
+git restore --source=8d2144d -- kastro.py
+
+=> git revert (Practice)
+
+=> git reset (soft reset and hard reset) - (Practice)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,140 @@
+Day 08 | 10-04-2025 
+=====================================================
+=====================
+Module 2: Git & GitHub
+=====================
+  506  git branch
+  507  git branch -r
+  508  git branch -a
+  509  git branch -r | wc -l
+  510  git branch -D payment
+  511  git branch -D payments
+  512  git branch
+  513  git branch dummy
+  514  git branch
+  515  git branch duplicate
+  516  git branch
+  517  git switch dummy
+  518  git branch
+  519  git branch -D dummy
+  520  git branch -D duplicate
+  521  git branch
+  522  git switch main
+  523  git branch
+  524  git branch -D dummy
+  525  git branch
+
+
+git merge movies
+Merge made by the 'ort' strategy.
+ movies1.txt | 0
+ movies2.txt | 0
+ movies3.txt | 0
+ movies4.txt | 0
+ movies5.txt | 0
+ 5 files changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 movies1.txt
+ create mode 100644 movies2.txt
+ create mode 100644 movies3.txt
+ create mode 100644 movies4.txt
+ create mode 100644 movies5.txt
+
+git rebase movies
+Successfully rebased and updated refs/heads/train.
+
+
+=> Merge Conflicts
+master/main branch
+
+master branch ---- code.txt ---- Hello World
+
+dev 1	- branch 1	- payments code	- code.txt
+dev 2	- branch 2	- movies code		- code.txt
+
+After merging branch1 with master branch;
+master branch ---- code.txt ---- payments code (first time merge - overwrite)
+
+now merge with branch2
+
+=> .gitignore
+
+=> Collaborators 
+
+=> git stash
+
+TL	----> Assigned a task (10.00 AM) --- Task: Create a python code related to payments and push the code to remote
+TM ----> You will start working on the code (10.30 AM)
+@10.30AM ----> TL ----> Keep the previous work aside, we got top priority work (bug fix)
+
+You cannot add, commit and push the partially completed work to the remote repo. Because it disturbs the existing functionality of the app.
+You need to store the partially completed task in a temporary location -----> git stash
+
+git stash will help to store the partially completed task in a temporary location
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To see the list of branches (which are available in local)
+git branch
+
+To see the list of branches available in remote (i.e GitHub)
+git branch -r
+
+To see the list of all branches available in local and also in GitHub
+git branch -a
+
+To see the number of branches in remote repo
+git branch -r |wc -l
+You will see the count of branches in GitHub
+
+=> To pull the code of a specific branch
+	git pull origin <BranchName>
