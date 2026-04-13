@@ -44,3 +44,5 @@ A structured **DevOps + AWS learning journey** divided into 3 powerful phases:
 | **07 Apr** | Git & GitHub | Working with Git_Part 2 | ✅ Completed |
 | **09 Apr** | Git & GitHub | Working with Git_Part 3 | ✅ Completed |
 | **10 Apr** | Git & GitHub | Working with Git_Part 4 | ✅ Completed |
+| **13 Apr** | Git & GitHub | Working with Git_Part 5 | ✅ Completed |
+| **13 Apr** | Maven | Maven_Part 1 | ✅ Completed |
