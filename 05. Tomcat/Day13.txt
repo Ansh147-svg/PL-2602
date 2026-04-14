@@ -1,0 +1,166 @@
+Day 10 | 13-04-2025 
+=====================================================
+=====================
+Module 3: Maven
+=====================
+=> Maven Repositories
+
+=> How maven downloads the dependencies from the pom.xml?
+
+=> Maven Goals/Commands
+src ----> source code of the app ----> .java -----> .class ----> package as an artifact
+
+a) compile - mvn compile**
+	maven will convert the .java files into .class files
+	.class files will be available in a newly created folder which is known as "target"
+
+b) test - mvn test**
+	it will perform the unit test execution of the source code
+
+c) package - mvn package**
+	it will generate the artifact based on the type of the application
+
+d) install - mvn install
+	it will install the project as a dependency in the local repo
+
+e) clean - mvn clean**
+	it will delete the old versions of the artifacts
+
+Netflix v1.1.0	-----> netflix1.1.0.war ----> Deployment
+after 1 month, developers have updated the code
+Netflix v1.2.0	-----> netflix1.2.0.war ----> Deployment
+
+All the artifacts will be stored in the artifact repo tools such as Nexus, JFrog
+We can also store the artifacts in the AWS / Azure Cloud
+	AWS Cloud - S3 Bucket
+	Azure Cloud - Blob Store
+
+Note: Whenever we are executing the maven goals, they must be executed from the location where pom.xml file is available
+
+=====================
+Module 4: Deployment of App
+=====================
+Types of application deployments;
+1. Manual deployment
+2. Automated deployment
+
+We will use webservers or app servers to deploy the java app
+Webservers: Tomcat, Nginx, JBoss...
+Particularly to deploy java based app, we will use Tomcat as a webserver
+Tomcat is developed by using JPL
+So to work with Tomcat, it is mandatory to install Java
+	>= Java 17/21/24
+Tomcat will run on default port number which is 8080
+
+=> Tomcat folder/directory structure
+BIN			- it consists of binary files. these files are used to start and stop tomcat server
+				.sh		- Linux Servers		- startup.sh, shutdown.sh
+				.bat		- Windows Servers	- startup.bat shutdown.bat
+
+CONF		- it contains tomcat configuration files
+				server.xml			- to configure the tomcat port number
+				tomcat-users.xml		- to configure the tomcat admin user info.
+				By default, when we setup the tomcat, we dont access the tomcat admin dashboard. If you want to access the tomcat admin dashboard, we need to 						configure admin info in the tomcat-users.xml
+
+WEBAPPS	- it is also known as deployment folder
+				manager		- context.xml
+				host-manager	- context.xml
+
+LIB			-it contains tomcat libraries - jar files
+	
+LOGS		- tomcat server logs will be available here
+
+TEMP		- contains temporary files
+
+=> The deployment process
+Developers -----> Writes the source code -----> Testing team will test the code and gives the approval ----> dev team or test team will push the code to GitHub repo ----> as a DevOps engineer, we need to setup the infra ----> we need to build the code ----> we need to deploy the code (manual, automated)
+
+
+sudo dnf install java-17-amazon-corretto-devel -y
+java --version
+
+Download full Tomcat
+cd /home/ec2-user
+wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.117/bin/apache-tomcat-9.0.117.tar.gz
+tar -xvf apache-tomcat-9.0.117.tar.gz
+
+Verify manager app exists
+ls /home/ec2-user/apache-tomcat-9.0.117/webapps/
+👉 You MUST see:
+ROOT  docs  examples  manager  host-manager
+
+Start Tomcat
+cd /home/ec2-user/apache-tomcat-9.0.117/bin
+./startup.sh
+
+vi /home/ec2-user/apache-tomcat-9.0.117/webapps/manager/META-INF/context.xml
+Find this section
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+       allow="127\.\d+\.\d+\.\d+|::1" />
+
+Replace it with
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+       allow="^.*$" />
+
+replace the same file in host-manager location
+vi /home/ec2-user/apache-tomcat-9.0.117/webapps/host-manager/META-INF/context.xml
+Find this section
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+       allow="127\.\d+\.\d+\.\d+|::1" />
+
+Replace it with
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+       allow="^.*$" />
+
+
+cd /home/ec2-user/apache-tomcat-9.0.117/bin
+./shutdown.sh
+./startup.sh
+
+
+Configure users (IMPORTANT)
+Edit:
+vi /home/ec2-user/apache-tomcat-9.0.117/conf/tomcat-users.xml
+Add:
+<role rolename="manager-gui"/>
+<role rolename="manager-status"/>
+<role rolename="manager-script"/>
+<role rolename="admin-gui"/>
+<user username="tomcat" password="tomcat" roles="manager-gui,manager-status"/>
+
+Access
+http://<PUBLIC-IP>:8080
+Username: tomcat
+Password: tomcat
+
+Repo for deployment
+https://github.com/KastroVKiran/tomcat-app-kastro.git
+
+Developer updates the coed and pushes that updated code to the GitHub repo
+As a DevOps engineer, i need to download the updated code to my local (or) clone the code to ec2 instance and generate the artifact using maven goals and then copy that artifact to your local / laptop and from the laptop manually deploy / upload the war file to tomcat
+
+The limitations of manual deployment are;
+every time when developer updates the code, we need to manually build the code
+every time when we build the code, we need to manually deploy that artifact into the Tomcat
+
+To automate the application deployment process, we need to CI & CD tools
+CI & CD tools;
+******Jenkins******
+GitHub Actions
+GitLab CI
+AWS Code Pipeline
+Azure Pipelines
+
+
+
+
+
+
+
+
+
+
+
+
+
+=> Deployment of Java Application
