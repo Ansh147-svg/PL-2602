@@ -1,0 +1,158 @@
+Day 11 | 16-04-2025 
+=====================================================
+=====================
+Module 4: Jenkins
+=====================
+Types of App Deployments;
+Manual**
+Automated
+
+Stages in Manual deployment:
+	git checkout	----> Compile the code	----> Package the code	----> Artifact	----> Deploy the artifact into the servers
+
+To automate the app deployment process we will use CI & CD tools
+CI & CD tools;
+	Jenkins*
+	GitHub Actions
+	Azure Pipelines
+	AWS Code Pipeline
+	GitLab CI
+
+What is CI & CD?
+CI - Continuous Integration
+	Hotstar	----> Version1.0	----> Test the code		----> Build the code
+	Hotstar	----> Version1.1	----> Test the code		----> Build the code
+	Hotstar	----> Version1.2	----> Test the code		----> Build the code
+
+CI = CT + CB
+
+CD - Continuous Delivery
+	If you are manually deploying the code into the servers, that is known as Continuous Delivery
+
+CD - Continuous Deployment
+	If you are automating the process of building the code, testing the code, and deploying the artifact
+
+Stages in CI & CD process;
+
+Pre-requisite: Setup the infrastructure (Creation of EC2 Instances) and install CI & CD tool (Jenkins)
+
+Stage 1: get the code from the GitHub repo
+Stage 2: build the code (artifacts)
+Stage 3: store the artifact (Nexus, JFrog, S3 Buckets...)
+Stage 4: code quality analysis (SonarQube)
+Stage 5: build the docker image (Docker)
+Stage 6: scan the docker image for vulnerabilities (Trivy, Docker scout image analysis, owasp...)
+Stage 7: deploy the app	
+			7.1. Tomcat webserver
+			7.2. Docker container
+			7.3. Kubernetes cluster
+
+
+Stage 1: get the code from the GitHub repo
+Stage 2: build the code (artifacts)
+Stage 3: store the artifact (Nexus, JFrog, S3 Buckets...)
+Stage 4: code quality analysis (SonarQube)
+Stage 5: deploy the app	
+			5.1. Tomcat webserver
+
+Jenkins is a CI & CD tool which is used to automate the application deployment process
+To work with Jenkins, we need to install Java (>=17)
+Jenkins is developed by using JPL
+Jenkins is free and open-source tool
+Jenkins will run on port number 8080
+
+Official documentation: https://www.jenkins.io/
+
+Jenkins is an UI tool
+
+=> Setup Jenkins
+https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/
+
+=> Jenkins Home Directory
+/var/lib/Jenkins
+
+=> Jenkins Jobs
+What is a job?
+Job is a collection of multiple tasks
+
+Jenkins has 2 types of jobs;
+Freestyle Project	- any configuration related to a Jenkins job will be done by using Jenkins UI
+Pipelines			- the configuration of Jenkins job will be done by using scripting
+	multi-branch pipeline
+
+*Pipelines are preferred for app deployments in real-time
+
+=> Jenkins Console Overview
+
+=> Basic Job 
+
+Jenkins Freestyle Project Options;
+General
+Source Code Management
+Triggers
+Environment
+Build Steps
+Post-build Actions
+
+=> Configure the existing job
+
+=> Create a file using Jenkins job and run it
+
+=> Run the file which is there on VM using Jenkins job
+
+=> Task: Create a shell file (/tmp) ---- filename: install.sh
+		inside the install .sh file, keep the commands related to download of tomcat from web
+		run the job
+		inside the /tmp location, you should see the tomcat tar file
+
+=> Jenkins Parameters - Parameterized Jobs
+What is a parameter?
+Parameters are used to pass the variables in the form of key-value pairs during the build process
+
+Types of parameters;
+String	- group of characters
+Choice	- select an option from the list of choice
+Boolean	- true / false
+
+Microservices
+	payments		- branch1
+	dth				- branch2
+	movies			- branch3
+	documentaries	- branch4
+
+=> Throttle Build
+To restrict the number of builds to happen in specific time period
+ in an hour --- 2 builds
+
+=> Integrate the public GitHub repo in Jenkins
+
+=> Build the code
+	maven goals	- mvn clean		----> deletes the existing target folder
+				- mvn compile	----> .class files
+				- mvn package	----> generate the artifact
+
+=> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
