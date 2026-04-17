@@ -1,0 +1,66 @@
+Day 12 | 17-04-2025 
+=====================================================
+=====================
+Module 4: Jenkins
+=====================
+=> Build Triggers - Build periodically
+If you want to build a job at regular intervals of time based on schedule
+
+cron expression is used to schedule a job
+	* * * * * ----> every minute the job will be built
+	H * * * * ---->every hour the job will be built
+	H/2 * * * * ----> every 30 minutes the job will be built
+
+Limitation: The job will get built automatically based on the cron expression without actually noticing the changes in the GitHub repo.
+
+=> Build Triggers - Poll SCM
+Poll SCM will trigger the job if there is any change in the GitHub repo
+
+Limitation: After pushing the changes, Jenkins will notice the change and will trigger a job with a minimum wait time of 1 minute
+
+=> Build Triggers - GitHub Hook Trigger
+GitHub Hook Trigger will trigger the job as soon as there is a change in the GitHub repo
+
+=> Build Triggers - Trigger Builds Remotely
+
+Jenkins Admin - has to build the job
+Team Members - permissions to create and configure the jobs
+
+Remote URL ----> can be generated for every job ----> Jenkins admin will have this URL ----> Jenkins Admin will hit the URL ----> Username and Password ----> Job will be built automatically 
+
+http://13.127.170.255:8080/job/public-repo-job/build?token=kastro
+
+=> Build Triggers - Build After Other Projects are Built / upstream and downstream jobs
+
+Job1		- build the code for microservice1		- manually trigger this build (automation can also be made)
+Job2		- build the code for microservice2		- once job1 is successful, automatically job2 should get triggered
+Job3		- build the code for microservice3		- once job3 is successful, automatically job3 should get triggered
+
+the execution of one job is dependent on the "successful" execution of its previous job
+atleast one build should be there, for all the jobs that are configured as upstream and downstream jobs
+
+=> Build Queue
+
+=> Automating the Build and Deployment Process - Project 1 (Freestyle Project)
+
+https://github.com/KastroVKiran/my-prime-v2.git
+
+=> Storing the Artifact
+Nexus
+JFrog
+S3 Bucket - AWS Service
+
+S3 - Simple Storage Service
+
+April 17, 2026, 21:55:57 (UTC+05:30)
+April 17, 2026, 21:56:41 (UTC+05:30)
+
+Tasks:
+Nexus: https://youtu.be/opJAfDOCZuI?si=VkEz4NuRTzEAy8vm
+SonarQube: https://youtu.be/ScdedztTaAU?si=stZrZQKsbuRYSTqp
+
+
+
+
+
+
