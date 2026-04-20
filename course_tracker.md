@@ -49,3 +49,5 @@ A structured **DevOps + AWS learning journey** divided into 3 powerful phases:
 | **14 Apr** | Maven & Tomcat | Maven_Part 2, Manual Deployment of Application in Tomcat | ✅ Completed |
 | **16 Apr** | Jenkins | Jenkins_Part 1, Introduction, Freestyle Projects-1 | ✅ Completed |
 | **17 Apr** | Jenkins | Jenkins_Part 2, Introduction, Freestyle Projects-2, Automation of App Deployment, Storing Artifacts in S3 | ✅ Completed |
+| **20 Apr** | Jenkins | Jenkins_Part 3, Pipelines-1, Master and Slave Arcchitecture | ✅ Completed |
+| **21 Apr** | Jenkins | Jenkins_Part 4, Pipelines-2, RBAC, Miscellaneus Topics, Final Project | ✅ Pending |
