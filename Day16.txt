@@ -1,0 +1,197 @@
+Day 13 | 20-04-2025 
+=====================================================
+=====================
+Module 4: Jenkins
+=====================
+=> Build Executor Status:
+How many jobs can we run parallelly in Jenkins at a time
+Default value: 2
+
+=> Email Notifications:
+qcra oqnx sepm xmvv
+
+=> Configure Private GitHub Repo:
+In GitHub, create PAT
+This token will act as an authentication layer for Jenkins to communicate with private GitHub repo
+
+=> Restoring the Job
+Plugin: Job Configuration History (Thin Backup)
+Limitation:
+1. We can recover the jobs which are created after installing the plugin - but we cannot recover the build history
+2. We cannot recover the jobs which are created before installing the plugin
+
+"Thin backup"
+
+=> Changing the Jenkins Port Number
+/usr/lib/systemd/system ----> jenkins.service ---->  Chnage the port number of Jenkins -----> Restart Jenkins (sudo systemctl restart jenkins)
+Open port number in the SG of VM ----> PublicIP:7070 ----> Enter the password and username
+
+=> Pipeline
+Sequential execution of different stages that are available in a job
+
+Build and Deployment of App
+Stage 1: Git Checkout
+Stage 2: Maven 
+			Step 2.1 mvn clean
+			Step 2.2 mvn compile
+			Step 2.3 mvn package
+Stage 3: Maven Package
+Stage 4: Store the Artifact
+Stage 5: Deploy to Tomcat
+
+To configure a pipeline job, we will write scripts
+These scripts we will keep inside a file which is known as "Jenkinsfile"
+The Jenkinsfile will be stored in the GitHub repo
+
+Two ways of writing Jenkinsfile;
+Declarative
+	recent and advanced style of writing a pipeline script
+	predefined structure
+	easy to read and manage
+	we will have blocks { } - inside blocks we will write configurations
+
+Scripted
+	groovy language	
+	DSL - domain specific language
+	programming
+	hard to read and manage
+
+P	- pipeline
+A	- agent
+S	- stages
+S	- steps
+post build actions
+
+Pipeline Project 1 - Netflix Project
+https://github.com/KastroVKiran/Netflix-Pipeline-Project.git
+
+pipeline {
+    agent any
+    tools {
+        jdk 'jdk21'
+        maven 'maven3'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git credentialsId: 'git-creds', url: 'https://github.com/KastroVKiran/Netflix-Pipeline-Project.git'
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package -T 1C -DskipTests'
+            }
+        }
+        stage('Tomcat Deployment') {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat-creds', path: '', url: 'http://3.110.209.78:9090')], contextPath: 'Netflix-App', war: '**/*.war'
+            }
+        }
+    }
+}
+
+
+Task: deploy Amazon Prime app using Pipeline concept and store artifact to S3 bucket
+
+
+pipeline {
+    agent any
+    tools {
+        jdk 'jdk21'
+        maven 'maven3'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git credentialsId: 'git-creds', url: 'https://github.com/KastroVKiran/Netflix-Pipeline-Project.git'
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package -T 1C -DskipTests'
+            }
+        }
+        stage('Download Artifact to Local') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+            }
+        }
+        stage('Tomcat Deployment') {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat-creds', path: '', url: 'http://3.110.209.78:9090')], contextPath: 'Netflix-App', war: '**/*.war'
+            }
+        }
+    }
+}
+
+============
+Email Notification
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk21'
+        maven 'maven3'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git credentialsId: 'git-creds', url: 'https://github.com/KastroVKiran/Netflix-Pipeline-Project.git'
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package -T 1C -DskipTests'
+            }
+        }
+
+        stage('Download Artifact to Local') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+            }
+        }
+
+        stage('Tomcat Deployment') {
+            steps {
+                deploy adapters: [tomcat9(
+                    credentialsId: 'tomcat-creds',
+                    url: 'http://3.110.209.78:9090'
+                )],
+                contextPath: 'Netflix-App',
+                war: '**/*.war'
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def buildStatus = currentBuild.currentResult
+
+                emailext (
+                    to: 'kastrokiran@gmail.com',
+                    subject: "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+Hello,
+
+Build Notification from Jenkins
+
+🔹 Job Name   : ${env.JOB_NAME}
+🔹 Build No   : ${env.BUILD_NUMBER}
+🔹 Status     : ${buildStatus}
+🔹 Build URL  : ${env.BUILD_URL}
+
+${buildStatus == 'SUCCESS' ? 'The pipeline executed successfully and deployment is completed.' : 'The pipeline failed. Please check the console logs for details.'}
+
+Regards,  
+Jenkins CI/CD
+"""
+                )
+            }
+        }
+    }
+}
