@@ -1,0 +1,215 @@
+Day 14 | 21-04-2026 
+=====================================================
+=====================
+Module 4: Jenkins
+=====================
+Separate CI & CD Pipelines
+-----------------------------------------------
+Both Jenkins (8080) and Tomcat (9090) should run on Same server
+
+Install deploy to container, s3 publisher, pipeline stage view, maven integration
+
+Create IAM Role with S3FullAccess and attach to Jenkins VM
+
+Edit the sudoers file with below content
+jenkins ALL=(ALL) NOPASSWD: /bin/cp, /bin/rm, /bin/mkdir, /home/ec2-user/apache-tomcat-9.0.117/bin/shutdown.sh, /home/ec2-user/apache-tomcat-9.0.117/bin/startup.sh
+
+CI Pipeline;
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+        jdk 'jdk21'
+    }
+
+
+    stages {
+
+        stage('Clone the Code') {
+            steps {
+                git 'https://github.com/KastroVKiran/Netflix-Pipeline-Project.git'
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package -T 1C -DskipTests'
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                echo 'Archiving WAR file in Jenkins...'
+                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+            }
+        }
+
+        stage('Upload Artifact to S3') {
+            steps {
+                echo 'Uploading WAR to S3 bucket using EC2 IAM role...'
+                sh '''
+                    aws s3 cp target/NETFLIX-1.2.3.war \
+                    s3://my-unique-bucket-name-12345-kastro/NETFLIX-${BUILD_NUMBER}.war \
+                    --region ap-south-1
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+    }
+}
+
+CI Job - Build 1 - NETFLIX-1.war	---- NETFLIX SIGN IN V-3.1
+CI Job - Build 2 - NETFLIX-2.war	---- NETFLIX SIGN IN V-3.2
+CI Job - Build 3 - NETFLIX-3.war	---- NETFLIX SIGN IN V-3.3
+
+CD Job - Build 1 ---- I want to pick a specific artifact from the S3 bucket and that artifact i want to deploy
+
+CD Pipeline;
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'BUILD_TO_DEPLOY',
+            defaultValue: '1',
+            description: 'Build number of artifact in S3 to deploy'
+        )
+    }
+
+    stages {
+
+        stage('Download Artifact from S3') {
+            steps {
+                echo "Downloading NETFLIX-${params.BUILD_TO_DEPLOY}.war from S3..."
+
+                sh """
+                    aws s3 cp \
+                    s3://my-unique-bucket-name-12345-kastro/NETFLIX-${params.BUILD_TO_DEPLOY}.war \
+                    ./deploy.war \
+                    --region ap-south-1
+                """
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                script {
+                    echo 'Deploying to Tomcat...'
+                    sh 'ls -lh deploy.war'
+                    sh 'sudo cp deploy.war /home/ec2-user/apache-tomcat-9.0.113/webapps/NETFLIX.war'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning workspace...'
+            cleanWs()
+        }
+    }
+}
+
+
+=> Master and Slave Architecture
+
+
+Node Names;
+WorkerNode1
+WorkerNode2
+
+Slave Names;
+slave1
+slave2
+
+https://github.com/KastroVKiran/Hotstar-App.git
+
+pipeline {
+    agent {
+        label 'slave1'
+    }
+    tools {
+        maven 'maven3'
+        jdk 'jdk21'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git 'https://github.com/KastroVKiran/Hotstar-App.git'
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Tomcat Deployment') {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat-creds', path: '', url: 'http://13.203.222.158:9090')], contextPath: 'hotstar-app', war: '**/*.war'
+            }
+        }
+    }
+}
+
+=> Parallel Stages
+
+1s
+3s
+13s
+1s
+====
+18s
+====
+
+microservice 1 ----> build the image - 10s
+microservice 2 ----> build the image - 10s
+microservice 3 ----> build the image - 10s
+================================
+								30s
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Parallel Execution') {
+            parallel {
+
+                stage('Stage A') {
+                    steps {
+                        echo 'Running Stage A...'
+                    }
+                }
+
+                stage('Stage B') {
+                    steps {
+                        echo 'Running Stage B...'
+                    }
+                }
+
+                stage('Stage C') {
+                    steps {
+                        echo 'Running Stage C...'
+                    }
+                }
+
+            }
+        }
+
+        stage('Final Stage') {
+            steps {
+                echo 'All parallel stages completed.'
+            }
+        }
+    }
+}
+
+
+
+
