@@ -1,0 +1,268 @@
+Day 15 | 23-04-2026 
+=====================================================
+=====================
+Module 4: Jenkins
+=====================
+=> Final Project
+=> Multi-branch Pipeline
+=> RBAC
+=> Jenkins Backup
+
+
+Jenkins + GitHub + Maven + S3 + Downloading Artifacts to Local + Nexus + SonarQube + Tomcat + Email
+
+Nexus - 8081			- Ubuntu - SG: launch-wizard-4, Keypair: keypair-b8
+SonarQube - 9000	- Ubuntu - SG: launch-wizard-4, Keypair: keypair-b8
+Jenkins - 8080		- Amazon Linux - SG: launch-wizard-4, Keypair: keypair-b8
+Tomcat - 8080		- Amazon Linux - SG: launch-wizard-4, Keypair: keypair-b8
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: '**/*.war', fingerprint: true
+            }
+        }
+
+stage('Upload to S3') {
+    steps {
+        sh '''
+        aws s3 cp target/*.war s3://amazon-prime-app-bucket/
+        '''
+    }
+}
+
+Add below email setup as well
+    post {
+        always {
+            script {
+                def buildStatus = currentBuild.currentResult
+                def buildUser = currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')[0]?.userId ?: 'Github User'
+
+                emailext(
+                    subject: "Pipeline ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+                        <p>This is a Jenkins CICD pipeline status.</p>
+                        <p>Project: ${env.JOB_NAME}</p>
+                        <p>Build Number: ${env.BUILD_NUMBER}</p>
+                        <p>Build Status: ${buildStatus}</p>
+                        <p>Started by: ${buildUser}</p>
+                        <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    """,
+                    to: 'kastrokiran123@gmail.com',
+                    from: 'kastrokiran123@gmail.com',
+                    replyTo: 'kastrokiran123@gmail.com',
+                    mimeType: 'text/html'
+                    
+                )
+            }
+        }
+    }
+
+        stage('SonarQube Analysis') {
+            steps {
+                // Simple one-line SonarQube analysis
+                withSonarQubeEnv('sonarqube-server') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+$ docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
+
+$ docker ps
+#You can see SonarQube container status
+
+Open Port No. 9000 in the SG of VM
+
+# Access SonarQube;
+<publicip>:9000 --- You can see the SonarQube console
+
+Click on 'Home'
+
+Default login name and password is 'admin'
+
+Set new password
+
+You can see the homepage of SonarQube 
+With this SonarQube setup is ready
+
+SonarQube Username is : admin
+SonarQube Password is : kastro (which is set by me)
+
+==================
+docker run -d -p 8081:8081 --name nexus sonatype/nexus3
+
+Access Nexus on Port 8081
+
+To login to nexus, click on 'Signin' in the top right corner. You can see the username as admin. But to get the password, a path is mentioned.
+To get the password; goto the MobaXTerm; now we need to go inside the container we have created sometime back;
+
+To go inside a container;
+$ docker exec -it <ContainerID> /bin/bash ---> You are now inside the container ---> ls ---> You can see the nexus related files ---> cd sonatype-work/ ---> cd nexus3/ ---> You can see 'admin.password' file ---> cat admin.password ---> Copy the password, dont copy 'bash-4.4' ---> Goto the nexus connected tab in browser ---> 
+Username: admin
+Password: Paste the password copied from MobaXTerm
+ ---> set new password ---> 'check' enable anonymous access ---> Next ---> Finish
+
+Goto MobaXTerm ---> Come out of the terminal ---> exit
+
+Nexus Username is : admin
+Nexus Password is : kastro (which is set by me)
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven3'
+        jdk 'jdk21'
+    }
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                git 'https://github.com/KastroVKiran/my-prime-v2.git'
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                sh 'aws s3 cp target/*.war s3://amazon-prime-app-bucket/'
+            }
+        }
+        
+        stage('Upload to Nexus') {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'amazon-prime-clone', classifier: '', file: 'target/amazon-prime-clone.war', type: 'war']], credentialsId: 'nexus-creds', groupId: 'com.amazonprime', nexusUrl: '43.204.24.223:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'amazon-prime', version: '2.0.6'
+            }
+        }
+
+        stage('Download to Local') {
+            steps {
+                archiveArtifacts artifacts: '**/*.war', fingerprint: true
+            }
+        }
+        stage('Sonar-Quality Analysis') {
+            steps {
+                withSonarQubeEnv('sonarqube-server') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Tomcat Deployment') {
+            steps {
+                deploy adapters: [
+                    tomcat9(
+                        alternativeDeploymentContext: '',
+                        credentialsId: 'tomcat-creds',
+                        path: '',
+                        url: 'http://13.232.126.90:8080'
+                    )
+                ],
+                contextPath: 'Amazon-Prime-App',
+                war: '**/*.war'
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def buildStatus = currentBuild.currentResult
+                def buildUser = currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')[0]?.userId ?: 'Github User'
+
+                emailext(
+                    subject: "Pipeline ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+                        <p>This is a Jenkins CICD pipeline status.</p>
+                        <p>Project: ${env.JOB_NAME}</p>
+                        <p>Build Number: ${env.BUILD_NUMBER}</p>
+                        <p>Build Status: ${buildStatus}</p>
+                        <p>Started by: ${buildUser}</p>
+                        <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    """,
+                    to: 'kastrokiran@gmail.com, sag23.bhandare@gmail.com, mrameerkhan00@gmail.com',
+                    from: 'kastrokiran@gmail.com',
+                    replyTo: 'kastrokiran@gmail.com',
+                    mimeType: 'text/html'
+                )
+            }
+        }
+    }
+}
+
+
+
+=> RBAC
+Roll Based Access Control
+
+=> Jenkins Backup
+#!/bin/bash
+TIMESTAMP=$(date +%F-%H-%M)
+BACKUP_DIR="/var/lib/jenkins"
+S3_BUCKET="kastro-demo-bucket"
+tar -czf /tmp/jenkins-backup-$TIMESTAMP.tar.gz $BACKUP_DIR
+aws s3 cp /tmp/jenkins-backup-$TIMESTAMP.tar.gz s3://$S3_BUCKET/
+rm -f /tmp/jenkins-backup-$TIMESTAMP.tar.gz
+
+---> Install aws cli
+		- vi awscli.sh ---> Paste the below content ---> 
+#!/bin/bash
+# Script to install AWS CLI on an instance
+
+# Download the AWS CLI installer
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# Install unzip package if not already installed
+sudo apt-get install unzip -y
+
+# Unzip the AWS CLI installer
+unzip awscliv2.zip
+
+# Run the AWS CLI installation script
+sudo ./aws/install
+
+# Verify installation
+aws --version
+
+---> Execute the above awscli.sh file
+
+---> Execute the above jenkins-backup.sh file
+
+---> Goto S3 bucket and check whether the backup is available or not. You will see a tar file.
+	This file we need to get back to Jenkins 
+
+---> Delete the existing pipeline(s)
+
+---> Lets restore the deleted pipeline
+cd /var/lib/
+ls ---> You will see Jenkins directory
+
+Lets get the URI of the object ----> Go to the Backup bucket in S3 ----> Click on the Object (tar file of Jenkins backup) ----> Copy the URI
+aws s3 cp <Bucket-URI> .
+ll ----> You will see the tar file. To restore this to Jenkins, we need to stop the Jenkins server
+sudo systemctl stop jenkins
+mv jenkins jenkins_backup
+Lets extract the tar file ----> sudo tar -xzf <TarFileName> -C /
+-C stands for:
+Change directory
+It tells tar:
+👉 Switch to this directory BEFORE performing the operation
+
+So, tar -xzf backup.tar.gz -C /
+Means:
+✔ Change to / (root directory)
+✔ Then extract files
+So files restore into their original absolute paths.
+✅ Why -C Exists
+Without -C, tar works in current directory.
+With -C, you control where extraction happens.
+
+ls ----> You will see the new Jenkins directory
+cd jenkins ----> ll ----> cd workspace/ ----> ll ----> You can see the pipeline name which was deleted
+sudo systemctl start jenkins
+Goto Jenkins dashboard and reload. You will see the recovered Jenkins pipeline
