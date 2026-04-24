@@ -1,0 +1,128 @@
+Day 16 | 24-04-2026 
+=====================================================
+=====================
+Module 5: Docker
+=====================
+Docker Installation
+# Update the package index
+sudo dnf update -y
+
+# Install Docker from the default AL2023 repository
+sudo dnf install -y docker
+
+# Start the Docker service
+sudo systemctl start docker
+
+# Enable Docker to start on boot
+sudo systemctl enable docker
+
+# (Optional) Verify service status
+sudo systemctl status docker
+
+
+docker -v
+
+control+d		- it will kill all the process that are running inside the container abruptly
+control+p+q		- it is the safest way to come out of the container
+
+    1  yum update -y
+    2  sudo dnf install -y docker
+    3  sudo systemctl start docker
+    4  sudo systemctl enable docker
+    5  sudo systemctl status docker
+    6  clear
+    7  docker -v
+    8  docker images
+    9  docker ps
+   10  docker ps -a
+   11  docker search amazonlinux
+   12  docker images
+   13* docker pull amazonlinux:2023
+   14  docker images
+   15  clear
+   16  docker images
+   17  du -sh /
+   18  docker images
+   19  docker run -it --name container1 amazonlinux
+   20  docker images
+   21  docker ps
+   22  docker ps -a
+   23  docker start 2a4e991a1299
+   24  docker ps -a
+   25  docker ps -a
+   26  docker ps
+   27  docker stop container1
+   28  docker ps
+   29  docker ps -a
+   30  docker start 2a4e991a1299
+   31  docker ps -a
+   32  docker ps
+   33  docker kill container1
+   34  docker ps -a
+   35  history
+   36  clear
+   37  docker images
+   38  docker ps
+   39  docker ps -a
+   40  docker search ubuntu
+   41  docker pull ubuntu
+   42  docker images
+   43  clear
+   44  clear
+   45  docker images
+   46  docker run -itd --name container2 ubuntu
+   47  docker ps
+   48  docker attach container2
+   49  docker ps
+   50  docker ps
+   51  docker exec -it 910e17f22bff /bin/bash
+   52  docker ps -a
+   53  docker pause container2
+   54  docker ps -a
+   55  docker exec -it 910e17f22bff /bin/bash
+   56  docker unpause 910e17f22bff
+   57  docker exec -it 910e17f22bff /bin/bash
+   58  docker ps
+   59  docker ps -a
+   60  clear
+   61  docker ps -a
+   62  docker inspect 910e17f22bff
+   63  docker ps -a
+   64  docker rm 910e17f22bff
+   65  docker rm 2a4e991a1299
+   66  docker ps -a
+   67  docker images
+   68  docker rmi ubuntu
+   69  docker rmi amazonlinux
+   70  docker images
+   71  docker ps
+   72  docker rm container2
+   73  docker rm -f container2
+   74  docker ps -a
+   75  docker images
+   76  docker run -it --name container1 ubuntu
+   77  ls
+   78  docker ps
+   79  clear
+   80  docker images
+   81  docker ps
+   82  docker logs cc21dbdf3010
+   83  docker top cc21dbdf3010
+   84  pwd
+   85  whoami
+   86  docker stats cc21dbdf3010
+   87  docker ps
+   88  docker stop 30 cc21dbdf3010
+   89  docker ps -a
+   90  clear
+   91  history
+
+
+
+
+
+
+
+
+
+
