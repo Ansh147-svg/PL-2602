@@ -1,0 +1,210 @@
+Day 17 | 27-04-2026 
+=====================================================
+=====================
+Module 5: Docker
+=====================
+Docker Installation
+# Update the package index
+sudo dnf update -y
+
+# Install Docker from the default AL2023 repository
+sudo dnf install -y docker
+
+# Start the Docker service
+sudo systemctl start docker
+
+# Enable Docker to start on boot
+sudo systemctl enable docker
+
+# (Optional) Verify service status
+sudo systemctl status docker
+
+   15  docker pull ubuntu
+   16  docker images
+   17  docker run -it --name container1 ubuntu
+   18  docker ps
+   19  docker commit container1 kastro-image
+   20  docker images
+   21  docker run -it --name kastro-container kastro-image
+   22  docker ps
+   23  clear
+   24  docker ps
+   25  ls
+   26  pwd
+   27  touch kastro.txt
+   28  ls
+   29  docker cp kastro.txt container1:/tmp
+   30  docker exec -it container1 /bin/bash
+   31  docker ps
+   32  docker images
+   33  docker images
+   34  docker ps
+   35  docker rename kastro-container container2
+   36  docker ps
+   37  docker kill $(docker ps -aq)
+   38  docker ps
+   39  docker ps -a
+   40  docker rm $(docker ps -aq)
+   41  docker ps
+   42  docker ps -a
+   43  docker imges
+   44  docker images
+   45  docker rmi -f $(docker images -q)
+   46  docker images
+   47  docker system prune -a
+   48  docker image prune
+
+
+=> Dockerfile
+To automate the image creation
+Dockerfile will work as configuration file to create docker images. By using the docker images, which are created by using Dockerfile, we can create custom containers with our own application
+
+Dockerfile has DSL key-words
+DSL - Domain Specific Language
+
+All the DSL key-words must be written in CAPITAL letters only
+Every DSL key-word should be written in a new line
+
+Dockerfile Components;
+1. FROM
+It indicates the base image to run our application
+On top of base image, we will create our own images
+Every new base image should be configured in a new line
+
+FROM ubuntu 
+FROM tomcat
+FROM MySQL
+FROM python
+FROM jdk
+FROM maven
+
+2. RUN
+It is used to execute the commands "while creating the docker image", on top of base image
+We can write multiple RUN instructions in a single Dockerfile.
+Docker engine will process the instructions from TOP to BOTTOM
+
+RUN touch kastro.java
+RUN mkdir docker
+RUN yum install git -y
+
+3. CMD
+It is used to execute the commands "while creating the docker container"
+We can write multiple CMD instructions in a single Dockerfile, but only the last CMD instruction in the Dockerfile will get processed 
+
+CMD touch kastro.java
+CMD mkdir docker
+CMD yum install git -y ---> This will be processed by Docker
+
+There is no point in writing multiple CMD instructions in a single Dockerfile
+
+
+FROM ubuntu #will pull ubuntu image from docker-hub
+RUN apt update -y
+RUN apt install git -y
+RUN touch kastro.txt
+
+
+FROM ubuntu
+RUN apt update -y
+CMD apt install maven -y
+RUN apt install git -y
+CMD mkdir docker-day2
+RUN touch kastro.txt
+
+4. COPY
+It is used to copy the files/directories to a docker images while creating the image
+It is also used to copy the files from source location to destination location
+It is also used to copy the files from VM to container
+
+5. ADD
+It is also used to copy the files/directories from source location to destination location
+By using ADD we can download the files from internet using the URL
+
+6.WORKDIR
+By default, when we login to the container we will be there in the root path (/) of the container
+All the instructions that are written after WORKDIR instruction will be executed in the WORKDIR location only
+
+FROM ubuntu
+RUN apt update -y
+RUN apt install git -y
+RUN touch kastro.txt
+WORKDIR /tmp
+RUN touch docker.py
+RUN mkdir python-dir
+
+7. LABEL
+It is used to assign metadata for our image
+key-value pair
+
+FROM ubuntu
+RUN apt update -y &&  apt install git -y && apt install maven -y
+RUN touch kastro.txt
+WORKDIR /tmp
+RUN touch docker.py
+RUN mkdir python-dir
+LABEL author Kastro
+LABEL app netflix
+LABEL env prod
+
+Note: We can use && to execute multiple commands within a single Dockerfile instruction
+
+CMD ["bash"]
+
+8. ENV
+It is used to set the environment variables inside the container
+key-value
+
+FROM python:3.10
+WORKDIR /app
+COPY app.py .
+ENV APP_ENV=dev-env
+ENV APP_PORT=5000
+ENV APP_NAME=Netflix
+CMD ["python", "app.py"]
+
+To overwrite the above values, we can use docker run -e APP_ENV=prod-env image3:v2
+Now you will see the overwritten value. This overwritten is the default behaviour of CMD Instruction
+
+Note: CMD instructions can be overwritten
+
+9. ENTRYPOINT
+ENTRYPOINT instructions cannot be overwritten
+
+10. EXPOSE
+It is used to expose our application to the end users
+
+11. USER
+By default the docker containers will run as "root" user only
+In real-time we should never run the containers as a root user
+Always run the containers as non-root user
+
+12. MAINTAINER
+It  represents author/maintainer of the Dockerfile
+
+FROM ubuntu
+EXPOSE 8080
+MAINTAINER name kastro
+
+13. VOLUME
+It is used to store data or mount the storage to the container
+
+14. ARGS
+
+https://www.youtube.com/watch?v=x55z7rk0NAU&list=PLs-PsDpuAuTfG3gFR5DnVD58kT7JBO97x&index=11&t=4266s&pp=iAQB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
