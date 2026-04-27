@@ -51,4 +51,7 @@ A structured **DevOps + AWS learning journey** divided into 3 powerful phases:
 | **17 Apr** | Jenkins | Jenkins_Part 2, Introduction, Freestyle Projects-2, Automation of App Deployment, Storing Artifacts in S3 | ✅ Completed |
 | **20 Apr** | Jenkins | Jenkins_Part 3, Pipelines-1, Miscellaneus Topics | ✅ Completed |
 | **21 Apr** | Jenkins | Jenkins_Part 4, Pipelines-2, Master and Slave Architecture | ✅ Completed |
-| **23 Apr** | Jenkins | Jenkins_Part 5, Pipelines-3, RBAC, Miscellaneus Topics, Final Project | ✅ Pending |
+| **23 Apr** | Jenkins | Jenkins_Part 5, Pipelines-3, RBAC, Miscellaneus Topics, Final Project | ✅ Completed |
+| **24 Apr** | Docker | Docker_Part 1, Introduction, Basic Commands | ✅ Completed |
+| **27 Apr** | Docker | Docker_Part 2, Dockerfile_Part 1 | ✅ Completed |
+| **28 Apr** | Docker | Docker_Part 3, Dockerfile_Part 2 , Running the Container as non-root user, Deployment of HTML App, Java Hotstar App, Docker Volumes | ✅ Completed |
