@@ -1,0 +1,407 @@
+Day 18 | 28-04-2026 
+=====================================================
+=====================
+Module 5: Docker
+=====================
+ARGS
+It is used to avoid hardcoded values in the Dockerfile
+
+FROM alpine
+ARG APP_VERSION=1.0
+RUN echo "Building app version: $APP_VERSION"
+CMD ["echo", "Container is running"]
+
+docker build -t arg-demo:v1 .
+
+docker build -t arg-demo --build-arg APP_VERSION=2.0 .
+
+ENTRYPOINT
+
+=> Running Docker Containers as non-root user
+
+from flask import Flask, jsonify
+import os
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "Hello from Docker!",
+        "user_id": os.getuid(),
+        "environment": os.getenv("APP_ENV", "not-set")
+    })
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "UP"})
+
+if __name__ == "__main__":
+    port = int(os.getenv("APP_PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+=> Project 1: Deploying HTML App
+https://github.com/KastroVKiran/ECR-ECS-Project.git
+
+=> Docker Volume
+Volume indicates storage
+It is just a directory inside a container
+
+Case 1: Creating Volume using Dockerfile
+
+Case 2: Sharing the existing volume b/w containers
+
+Case 3: Creating volumes using command & sharing the volume b/w containers
+
+Case 4:  Creation of volume on host machine and attach it to any required container
+
+Case 5: Creating an EBS Volume and Attaching to Docker Container
+This demo is tested
+Persisting the data in EBS Volumes - Attaching the EBS Volume to a container
+===============================================================================================
+In this demo we will deploy an application which stores the user data entered in the application.
+Then we will delete the container.
+Once we create the container, the old data should be persisted
+
+⭐ SECTION 1 — Create EBS Volume (gp3, 11 GiB)
+A) AWS Console
+Note; Create the EBS Volume in the same region as of your EC2 instance
+
+Navigate to:
+EC2 → Elastic Block Store → Volumes → Create volume
+Settings:
+Size: 11 GiB
+Volume type: gp3
+AZ: us-east-1a
+Optional tag: Name=ebs-gp3-docker
+
+Click Create Volume
+Select volume → Actions → Attach Volume
+Select your instance
+Device name: /dev/sdb
+Attach
+
+⭐ SECTION 2 — Identify OS-level device
+AWS device name /dev/sdb becomes one of these in OS:
+/dev/xvdb (most common)
+/dev/nvme1n1 (Nitro instances)
+
+Run:
+lsblk
+
+You will see something similar:
+sdb       8:16   0   11G  0 disk
+└─         (no partitions)
+
+OR if Nitro:
+nvme1n1 259:4    0   11G  0 disk
+
+We will assume it appears as /dev/xvdb
+(Replace with the actual mapping from your VM.)
+
+⭐ SECTION 3 — Format the new volume (ext4)
+Only do this the first time.
+sudo mkfs.ext4 /dev/xvdb
+(Use whatever lsblk showed.)
+
+WHY ARE WE FORMATING THE NEW VOLUME. WHAT HAPPENS HERE??
+/dev/xvdb (the EBS volume) is a raw block device. 
+Running sudo mkfs.ext4 /dev/xvdb creates an ext4 filesystem on that raw device so the operating system can store files and directories on it. Without a filesystem, the kernel doesn’t know how to map filenames and directories to blocks on the disk.
+
+⭐ SECTION 4 — Mount the EBS volume permanently
+Create mount folder:
+sudo mkdir -p /mnt/ebs (everything you read/write inside /mnt/ebs is stored on the EBS volume.)
+
+Mount manually: You MUST mount the device before using it
+sudo mount /dev/xvdb /mnt/ebs [Your EBS volume (block device) = /dev/xvdb. This command attaches (mounts) the formatted filesystem on /dev/xvdb to the directory /mnt/ebs.]
+📌 Mounting does NOT copy anything — it just connects the device to the directory.
+
+Verify:
+df -h /mnt/ebs
+
+Set permissions:
+sudo chown -R ec2-user:ec2-user /mnt/ebs
+sudo chmod -R 755 /mnt/ebs
+
+Because without the permissions our application inside Docker cannot write the SQLite DB to the EBS volume.
+
+Make persistent via /etc/fstab
+sudo blkid /dev/xvdb
+
+Output (example):
+/dev/xvdb: UUID="9e748e7c-74f3-4672-b1d0-92652fd836ad"
+
+✔ blkid = Block ID --- blkid is a Linux command used to display block device attributes. When you run this command (sudo blkid /dev/xvdb), You are asking Linux to "“Tell me the filesystem details of this EBS device.”
+⭐ Why do we need the UUID?
+Because Linux needs a stable way to identify a disk at boot time.
+🟥 Device names like /dev/sdb or /dev/xvdb
+➤ can change after reboot, kernel upgrade, or when you attach/detach other EBS volumes.
+⭐ UUID is stable.
+The UUID never changes, even if device names change.
+So we mount using the below command
+
+Add to fstab:
+sudo bash -c 'echo "UUID=9e748e7c-74f3-4672-b1d0-92652fd836ad /mnt/ebs ext4 defaults,nofail 0 2" >> /etc/fstab'
+
+This ensures:
+✔ The correct volume is mounted every time
+✔ Kernel reordering does not break mounts
+✔ The EBS volume auto-mounts after reboot
+✔ Safe & stable production practice
+
+Test:
+sudo umount /mnt/ebs
+sudo mount -a
+df -h /mnt/ebs
+
+⭐ SECTION 5 — Build a persistent Docker app (SQLite)
+Create project folder:
+mkdir ~/ebs-flask
+cd ~/ebs-flask
+
+📌 File 1 — Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+📌 File 2 — requirements.txt
+Flask==2.2.5
+
+📌 File 3 — app.py
+from flask import Flask, request, redirect, url_for, render_template_string
+import sqlite3
+import os
+
+DB_PATH = "/data/app.db"  # stored on EBS
+
+app = Flask(__name__)
+
+def init_db():
+    os.makedirs("/data", exist_ok=True)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            message TEXT,
+            ts DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
+    conn.close()
+
+@app.route("/", methods=["GET"])
+def index():
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute("SELECT id, name, message, ts FROM entries ORDER BY id DESC").fetchall()
+    conn.close()
+    return render_template_string("""
+    <h2>Persistent App (Data stored on EBS)</h2>
+    <form method="POST" action="/submit">
+      <input name="name" placeholder="Your name"><br>
+      <input name="message" placeholder="Your message"><br>
+      <button type="submit">Submit</button>
+    </form>
+
+    <h3>Messages:</h3>
+    <ul>
+    {% for r in rows %}
+      <li><b>{{r[1]}}</b> ({{r[3]}}): {{r[2]}}</li>
+    {% else %}
+      <li>No data yet</li>
+    {% endfor %}
+    </ul>
+    """, rows=rows)
+
+@app.route("/submit", methods=["POST"])
+def submit():
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("INSERT INTO entries (name, message) VALUES (?,?)",
+                 (request.form.get("name"), request.form.get("message")))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
+
+if __name__ == "__main__":
+    init_db()
+    app.run(host="0.0.0.0", port=5000)
+
+⭐ SECTION 6 — Build & run container using the EBS mount
+Build image
+docker build -t ebs-flask:1 .
+
+Run container (bind mount host EBS to container)
+docker run -d --name ebs-app \
+  -p 5000:5000 \
+  -v /mnt/ebs:/data \
+  ebs-flask:1
+
+Access the app on 5000 port
+
+Important:
+/mnt/ebs (host)
+/data (inside container)
+
+SQLite file /data/app.db now lives physically on EBS at:
+/mnt/ebs/app.db
+
+Verify app.db exists on EBS
+ls -l /mnt/ebs
+sqlite3 /mnt/ebs/app.db "SELECT * FROM entries;" (If you see error here, install sqlite3 tool using "sudo yum install sqlite -y" "sqlite3 --version")
+
+And then rerun the above command again i.e
+sqlite3 /mnt/ebs/app.db "SELECT * FROM entries;"
+You will see the data entered in the app
+
+Delete the container
+docker stop ebs-app
+docker rm ebs-app
+
+Run a fresh new container
+docker run -d --name ebs-app2 -p 5001:5000 -v /mnt/ebs:/data ebs-flask:1
+OR
+docker run -d --name ebs-app2 \
+  -p 5001:5000 \
+  -v /mnt/ebs:/data \
+  ebs-flask:1
+
+Is -v /mnt/ebs:/data mandatory?
+✔ YES — if you want persistent data on EBS
+❌ NO — if you don’t care about persistence or EBS storage
+
+Let me explain both cases:
+⭐ CASE 1 — You include -v /mnt/ebs:/data
+-v /mnt/ebs:/data
+
+This means:
+Host directory → /mnt/ebs (lives on EBS volume)
+Container directory → /data (inside container)
+
+Anything the app writes into /data (e.g., app.db) actually gets stored at:
+/mnt/ebs/app.db   <-- physically on EBS volume
+
+So data is not stored inside the container, it is stored in EBS.
+Therefore, when you do:
+docker rm ebs-app2
+
+✔ Data survives
+✔ New container can access old data
+✔ Persistence works
+✔ SQLite DB is safe
+✔ App will show old entries
+
+This is exactly why you created the EBS volume.
+
+⭐ CASE 2 — You DO NOT include -v /mnt/ebs:/data
+If you run:
+docker run -d --name ebs-app2 -p 5001:5000 ebs-flask:1
+
+Then:
+❌ The container does NOT use EBS
+❌ The directory /data inside the container is EMPTY
+❌ The SQLite database (app.db) is created inside the container’s internal filesystem
+❌ When you delete the container → YOU LOSE ALL DATA
+❌ No persistence
+❌ A new container creates a brand-new empty database
+
+Inside container, /data will belong to the ephemeral container layer:
+/var/lib/docker/overlay2/<id>/diff/data
+
+When container is removed:
+docker rm ebs-app2
+
+Linux deletes all container layers → your SQLite DB is gone forever.
+
+📌 Why? Because containers are ephemeral.
+A Docker container’s internal filesystem:
+disappears when the container is deleted
+is NOT tied to the host disk
+is NOT persistent
+That is exactly why we mount EBS as a volume.
+
+⭐ SUMMARY TABLE
+Command includes -v /mnt/ebs:/data?	Where data is stored	Persistence?
+YES	On EBS 						(/mnt/ebs/app.db)		✔ Persistent
+NO								Inside container FS		❌ Lost on delete
+
+⭐ BEST PRACTICE
+For persistent data, always mount host storage.
+This is especially true for:
+databases (SQLite, MySQL, PostgreSQL)
+uploaded files
+logs
+user data
+application state
+
+Without the volume:
+💀 Data = lost
+💀 No persistence test possible
+💀 Your EBS volume will remain empty
+
+http://<EC2_PUBLIC_IP>:5001
+
+You will see ALL old entries, even though you created a brand new container.
+
+🌟 SECTION 7 — WHY DATA PERSISTS (IMPORTANT EXPLANATION)
+✔ Containers are ephemeral
+Deleting a container deletes only:
+	its internal filesystem layer
+	runtime state
+
+✔ But you mounted host directory from EBS:
+Host: /mnt/ebs   <--- lives on EBS block storage
+Container: /data
+
+So when Flask writes:
+sqlite3.connect("/data/app.db")
+
+it really writes to:
+/mnt/ebs/app.db   <-- on your gp3 EBS volume
+
+✔ When you delete the container:
+docker rm ebs-app
+
+EBS volume is NOT touched.
+The file /mnt/ebs/app.db remains exactly as is.
+
+✔ When you create a new container
+docker run -v /mnt/ebs:/data ...
+
+You reattach the same app.db file, so the new container loads the old data.
+
+⭐ SECTION 8 — Clean-up (optional)
+docker stop ebs-app2
+docker rm ebs-app2
+sudo umount /mnt/ebs
+aws ec2 detach-volume --volume-id <your-volume-id>
+aws ec2 delete-volume --volume-id <your-volume-id>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
