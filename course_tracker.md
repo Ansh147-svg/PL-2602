@@ -54,4 +54,6 @@ A structured **DevOps + AWS learning journey** divided into 3 powerful phases:
 | **23 Apr** | Jenkins | Jenkins_Part 5, Pipelines-3, RBAC, Miscellaneus Topics, Final Project | ✅ Completed |
 | **24 Apr** | Docker | Docker_Part 1, Introduction, Basic Commands | ✅ Completed |
 | **27 Apr** | Docker | Docker_Part 2, Dockerfile_Part 1 | ✅ Completed |
-| **28 Apr** | Docker | Docker_Part 3, Dockerfile_Part 2 , Running the Container as non-root user, Deployment of HTML App, Java Hotstar App, Docker Volumes | ✅ Completed |
+| **28 Apr** | Docker | Docker_Part 3, Dockerfile_Part 2 , Running the Container as non-root user, Deployment of HTML App, Docker Volumes | ✅ Completed |
+| **30 Apr** | Docker | Docker_Part 4, Multi-Stage Dockerfile, Docker Base Image Types, Docker-Compose & Docker Networks | ✅ Pending |
+| **01 May** | Docker | Docker_Part 5, Docker Portainer, Docker Swarm - Overview, Docker Final Project | ✅ Pending |
