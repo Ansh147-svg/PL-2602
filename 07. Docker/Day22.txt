@@ -1,0 +1,219 @@
+Day 19 | 30-04-2026 
+=====================================================
+=====================
+Module 5: Docker
+=====================
+=> Types of Docker Images;
+	1. Base Images
+	2. Child Images
+
+FROM ubuntu		-----> Base Image
+COPY app.py .
+
+Using Dockerfile we will build the image, that image is known as Child Image
+
+RUN apt update -y && apt install git -y
+
+Types of Base Images;
+Standard Images
+	Size: Large (300 MB - 1 GB+)
+	Content: Full OS with package manager, build tools, libraries...
+	Ex: ubuntu:22.04, python:3.10, node:25
+
+Slim Images
+	Size: Medium (50 MB - 150 MB)
+	Content: Minimal OS, basic utilities, no build tools
+	Ex: python:3.10-slim, node:25-slim
+
+Alpine Images
+	Size: Small (5 MB - 50 MB)
+	Content: Alpine Linux, apk
+	Ex: python:3.10-alpine, node:25-alpine
+
+Distroless Images
+	Created by Google
+	Size: Very Small (2 MB - 30 MB)
+	Content: Only application run time, no shell, no package manager
+	Ex: gcr.io/distroless/python3.10
+
+Scratch Images
+	Size: 0 MB	
+	Content: Absolutely empty, No shell, No OS, nothing...
+	
+ cat Dockerfile.standard
+FROM python:3.11
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+cat Dockerfile.slim
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+cat Dockerfile.alpine
+FROM python:3.11-alpine
+WORKDIR /app
+RUN apk add --no-cache gcc musl-dev
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+=> Multi-stage Dockerfile
+Compiled Languages	- java, go, C, C++
+Interpreted Languages	- python, node, php..
+
+Layer Creating Instructions;
+FROM, RUN, COPY, ADD
+
+Non-Layer Creating Instructions;
+CMD, ENTRYPOINT, WORKDIR, EXPOSE, ENV, LABEL, USER, VOLUME, ARG
+
+&&
+Use type of base images (slim, alpine)
+Multi-stage Dockerfile
+
+Stage 1: Build Process - generate artifact
+Stage 2: Run Process  - take only that artifact and run the container
+
+PublicIP:8080
+
+=> Docker Compose
+To automate the process of image creation and container creation, we will use docker-compose
+
+docker-compose.yaml
+
+YAML/YML - Yet Another Markup Language
+
+Note: We need to install docker compose
+
+version: '3.10'
+services:
+
+mkdir -p ~/.docker/cli-plugins/
+
+curl -L https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 \
+  -o ~/.docker/cli-plugins/docker-buildx
+
+chmod +x ~/.docker/cli-plugins/docker-buildx
+
+ls -lh ~/.docker/cli-plugins/docker-buildx
+
+docker buildx version
+
+
+
+https://github.com/KastroVKiran/Kastro-Ecom-DC.git
+
+services:
+  main-service: #name of the service
+    build: ./main-service
+    container_name: kastro-main-service-container
+    ports:
+      - "81:80"
+    restart: on-failure
+
+  product-service: #name of the service
+    build: ./product-service
+    container_name: kastro-product-service-container
+    ports:
+      - "82:80"
+    restart: on-failure
+
+  user-service: #name of the service
+    build: ./user-service
+    container_name: kastro-user-service-container
+    ports:
+      - "83:80"
+    restart: on-failure
+
+  order-service: #name of the service
+    build: ./order-service
+    container_name: kastro-order-service-container
+    ports:
+      - "84:80"
+    restart: on-failure
+
+  cart-service: #name of the service
+    build: ./cart-service
+    container_name: kastro-cart-service-container
+    ports:
+      - "85:80"
+    restart: on-failure
+
+========================
+
+=> Docker Networking
+It is used to establish the communication between different microservice containers running for our app
+
+Docker Network Types;
+Bridge Network	-0
+Host Network
+None Network
+
+Overlay driver
+macvlan
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

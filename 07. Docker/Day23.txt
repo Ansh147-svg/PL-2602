@@ -1,0 +1,581 @@
+Day 20 | 01-05-2026 
+=====================================================
+=====================
+Module 5: Docker
+=====================
+2 Tier App
+Web / App Tier - Frontend - Flask Web App (Python)
+Database Tier - Backend	- MySQL
+
+
+Docker Installation
+# Update the package index
+sudo dnf update -y
+
+# Install Docker from the default AL2023 repository
+sudo dnf install -y docker
+
+# Start the Docker service
+sudo systemctl start docker
+
+# Enable Docker to start on boot
+sudo systemctl enable docker
+
+# (Optional) Verify service status
+sudo systemctl status docker
+
+Docker Compose Installation
+===========================
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -SL \
+https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64 \
+-o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose 
+
+docker compose version
+
+====== 2 Tier App=======
+app.py
+
+from flask import Flask, request, render_template_string
+import mysql.connector
+import os
+
+app = Flask(__name__)
+
+# Database connection settings from env variables
+db_config = {
+    "host": os.getenv("DB_HOST", "db"),
+    "user": os.getenv("DB_USER", "devops"),
+    "password": os.getenv("DB_PASSWORD", "devops123"),
+    "database": os.getenv("DB_NAME", "training")
+}
+
+# Updated HTML with modern UI, gender dropdown, and role dropdown
+html = """
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+            padding: 30px;
+            transition: transform 0.2s ease;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            color: #1e1e2f;
+            font-weight: 600;
+            font-size: 28px;
+        }
+        .subhead {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+            border-left: 3px solid #764ba2;
+            padding-left: 12px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 32px;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: white;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            margin-top: 8px;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        h3 {
+            color: #1e1e2f;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 16px;
+            background: #fafafc;
+        }
+        .user-list li {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .user-list li:last-child {
+            border-bottom: none;
+        }
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            min-width: 120px;
+        }
+        .badge-gender {
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #495057;
+        }
+        .badge-role {
+            background: #e6d5ff;
+            color: #5a2d8c;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .empty-message {
+            text-align: center;
+            color: #888;
+            padding: 24px;
+            font-style: italic;
+        }
+        hr {
+            margin: 24px 0 16px;
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, #ddd, transparent);
+        }
+        .stats {
+            font-size: 13px;
+            color: #666;
+            margin-top: 12px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>✨ User Directory</h2>
+        <div class="subhead">Add or view team members</div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>👤 Full Name</label>
+                <input type="text" name="username" placeholder="e.g., Priya Sharma" required>
+            </div>
+
+            <div class="form-group">
+                <label>⚥ Gender</label>
+                <select name="gender" required>
+                    <option value="" disabled selected>– Select gender –</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>💼 Role</label>
+                <select name="role" required>
+                    <option value="" disabled selected>– Select role –</option>
+                    <option value="DevOps Engineer">DevOps Engineer</option>
+                    <option value="Software Engineer">Software Engineer</option>
+                    <option value="Prospective DevOps Engineer">Prospective DevOps Engineer</option>
+                </select>
+            </div>
+
+            <button type="submit">➕ Save User</button>
+        </form>
+
+        <h3>📋 Stored Users</h3>
+        {% if rows %}
+            <ul class="user-list">
+                {% for row in rows %}
+                    <li>
+                        <span class="user-name">{{ row[0] }}</span>
+                        <span class="badge-gender">{{ row[1] }}</span>
+                        <span class="badge-role">{{ row[2] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="stats">✓ {{ rows|length }} user(s) registered</div>
+        {% else %}
+            <div class="user-list">
+                <div class="empty-message">No users yet. Add your first one above ☝️</div>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+"""
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+
+    # Updated table schema with gender and role columns
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            name VARCHAR(100),
+            gender VARCHAR(50),
+            role VARCHAR(100)
+        )
+    """)
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        gender = request.form.get("gender")
+        role = request.form.get("role")
+
+        if username and gender and role:
+            cursor.execute(
+                "INSERT INTO users (name, gender, role) VALUES (%s, %s, %s)",
+                (username, gender, role)
+            )
+            conn.commit()
+
+    cursor.execute("SELECT name, gender, role FROM users")
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template_string(html, rows=rows)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
+Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["python", "app.py"]
+
+version: '3.8'
+services: 
+  db: 
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: training
+      MYSQL_USER: devops
+      MYSQL_PASSWORD: devops123
+    networks:
+      - webapp_net
+    volumes:
+      - db_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: flask_web
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: devops
+      DB_PASSWORD: devops123
+      DB_NAME: training
+    depends_on:
+      - db #ensures the db container starts before the web container to serve app
+    networks: 
+      - webapp_net
+
+volumes:
+  db_data:
+networks:
+  webapp_net: #network name
+
+
+=> 3 Tier App
+https://github.com/KastroVKiran/DC-3TierApp.git
+
+=> Jenkins + Docker Compose Project
+https://youtu.be/BScNFDBdE7M?si=EJTzdR4WoIhrQSBU
+
+=> Docker Final Project
+https://github.com/KastroVKiran/Starbucks-App-Kastro.git
+
+sudo yum install libatomic -y
+
+pipeline {
+agent any
+
+tools {
+    nodejs 'node25'
+}
+
+environment {
+    IMAGE_NAME = "kastrov/starbucks"
+    IMAGE_TAG = "latest"
+}
+
+stages {
+
+    stage('Git Checkout') {
+        steps {
+            git 'https://github.com/KastroVKiran/Starbucks-App-Kastro.git'
+        }
+    }
+
+    stage('NPM Install') {
+        steps {
+            sh 'npm install'
+        }
+    }
+
+    stage('Build Image') {
+        steps {
+            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+        }
+    }
+
+    stage('Push Image') {
+        steps {
+            script {
+                docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
+                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+    }
+
+    stage('Create Container') {
+        steps {
+            sh 'docker rm -f starbucks || true'
+            sh "docker run -d --name starbucks -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
+    }
+}
+}
+
+=> Task: Integrate SonarQube & Email Notifications
+=> Task: I want to pick a specific versioned image from the dockerhub and i want to deploy that particular versioned 1
+
+
+==============Docker Image Scanning===========
+Docker Image Scanning - Trivy
+==============================
+Clone "https://github.com/KastroVKiran/ECR-ECS-Project.git"
+
+docker build -t myapp:v1 .
+
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://aquasecurity.github.io/trivy-repo/rpm/releases/x86_64/
+sudo rpm --import https://aquasecurity.github.io/trivy-repo/rpm/public.key
+sudo yum clean all
+sudo yum install trivy -y
+
+trivy --version
+
+Scan Your Docker Image
+Your image: myapp:v1
+
+Run:
+trivy image myapp:v1
+
+The above command might show error, the error is not because of trivy or scanning, it is because of insufficient disk space in the VM. 
+While running Trivy, it tried to download the Java vulnerability database (~800 MB) into /tmp, but your EC2 instance ran out of storage. This is very common on t2.micro / small EC2 instances.
+
+To check disk size
+df -h
+
+On the first run, Trivy insists on downloading the Java vulnerability database into /tmp path. And Because your /tmp is only 481 MB, the Java DB download (~834 MB) fails.
+The simplest and correct solution is to change the temporary directory used by Trivy so that the download happens on your main disk (/), which has ~26 GB free.
+
+Create a New Temporary Directory
+mkdir -p /home/ec2-user/trivy-temp
+
+Tell Linux to Use That Directory Instead of /tmp
+Set the TMPDIR environment variable:
+export TMPDIR=/home/ec2-user/trivy-temp
+
+Verify it:
+echo $TMPDIR
+
+Expected:
+/home/ec2-user/trivy-temp
+
+Run the Scan Again
+trivy image myapp:v1
+
+Now the Java DB (~834 MB) will download into:
+/home/ec2-user/trivy-temp
+instead of /tmp.
+
+Once the Java DB is downloaded once, future scans can skip it:
+trivy image --scanners vuln --skip-java-db-update myapp:v1
+This makes scanning much faster.
+
+Generate Reports - JSON report (for CI/CD)
+trivy image -f json -o trivy-report.json myapp:v1
+
+ls ----> You will see the json file ---> cat <JSON_FILE_NAME>
+
+View the JSON Report ---->
+If jq is installed, use:
+jq . trivy-report.json
+
+Install jq if needed:
+sudo yum install jq -y
+
+Then filter vulnerabilities:
+jq '.Results[].Vulnerabilities[] | {PackageName, VulnerabilityID, Severity, InstalledVersion, FixedVersion}' trivy-report.json
+jq '.Results[].Vulnerabilities[] | {PkgName, VulnerabilityID, Severity, InstalledVersion, FixedVersion}' trivy-report.json
+
+See only the highly risk vulnerabilities;
+trivy image --severity HIGH,CRITICAL --exit-code 1 myapp:v1
+
+Understand the Vulnerability Fields
+Typical report section:
+Field			Meaning
+PackageName	vulnerable package (This tells which package is vulnerable.)
+VulnerabilityID	CVE identifier (CVE = Common Vulnerabilities and Exposures)
+Severity			risk level
+InstalledVersion	version inside image
+FixedVersion	version that fixes issue
+
+Where These Vulnerabilities Come From?
+Your Dockerfile:
+FROM nginx:latest
+COPY . /usr/share/nginx/html/
+EXPOSE 80
+
+Vulnerabilities usually come from:
+Source			Example
+Base OS			Debian packages
+Libraries		openssl
+System tools		curl
+Web server		nginx
+
+So the vulnerabilities are not from your application code. They come from the base image.
+
+How DevOps Engineers Fix Vulnerabilities
+Method 1 — Change Base Image
+Instead of:
+FROM nginx:latest
+
+Use:
+FROM nginx:alpine
+
+Why?
+Image		Size			Vulnerabilities
+nginx:latest	~164 MB	more
+nginx:alpine	~23 MB		fewer
+
+Method 2 — Update Packages
+Example:
+RUN apt-get update && apt-get upgrade -y
+This installs patched packages.
+
+Method 3 — Use Minimal Images
+Better base images:
+
+Image	Type
+alpine	minimal
+distroless	production secure
+scratch	ultra minimal
+
+Method 4 — Remove Unnecessary Packages
+Example:
+remove compilers
+remove debugging tools
+remove unused libraries
+
+Your Next Step (Practical)
+
+Change Dockerfile:
+FROM nginx:alpine
+COPY . /usr/share/nginx/html/
+EXPOSE 80
+
+Then run:
+docker build -t myapp:v2 .
+
+trivy image myapp:v2
+
+Compare vulnerabilities.
+✅ You have now successfully completed a real container security analysis workflow.
+===========
+curl -L https://downloads.portainer.io/ce2-16/portainer-agent-stack.yml -o portainer-agent-stack.yml
+docker stack deploy -c portainer-agent-stack.yml portainer
+
+docker ps
+
+public-ip of swarm master:9443 
+
+https://13.233.198.125:9443 (OR)
+http://13.233.198.125:9000 (Mostly will work on 9000)
+
+Setup password
+Click on refresh
+You will see "Primary: up" ----> Click on it ----> Dashboard (Leftpane) ----> You can see all the details
+We can also create containers using GUI ---> Try it by going to containers (left pane)
+==============
+Docker Swarm
