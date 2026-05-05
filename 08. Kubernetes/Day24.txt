@@ -1,0 +1,68 @@
+Day 21 | 05-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+Creation of Kubernetes Cluster;
+1. Self Managed K8s Cluster - You need to manage everything
+	1.1. minikube - single node cluster - for beginners
+	1.2. kubeadm - multi node cluster - manual maintenance
+	1.3. KOps - multi node cluster - manual maintenance
+	1.4. KinD - multi node cluster - manual maintenance
+	1.5. Rancher... - multi node cluster - manual maintenance
+
+2. Managed K8s Cluster - 
+	2.1. AWS - EKS (Elastic Kubernetes Service)***
+	2.2. Azure - AKE (Azure Kubernetes Engine)**
+	2.3. Google - GKE (Google Kubernetes Engine)*
+
+To create Kubernetes cluster, in AWS Cloud, we have 4 approaches;
+	1. Command*
+	2. AWS/Azure/GCP Console*
+	3. Manifest File
+	4. Terraform*
+
+Attach below policies to the EKS Client VM
+AdministratorAccess
+AmazonEC2FullAccess
+AmazonEKSWorkerNodeMinimalPolicy
+AmazonVPCFullAccess
+AWSCloudFormationFullAccess
+IAMFullAccess
+
+sudo apt install unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+aws --version
+
+curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin
+kubectl version --short --client
+
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+
+eksctl create cluster --name kastro-cluster --region ap-south-1 --node-type t2.medium  --zones ap-south-1a,ap-south-1b 
+	- by default - 2 worker nodes will get created - 80 GB storage 
+
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+
+
+
+K U B E R N E T E S
+
+
+
+
+
+
+
+
+
+
+
+
