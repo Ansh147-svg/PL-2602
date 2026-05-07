@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx-app  #this label is referred in the service manfiest file. using this label only, service will identify the pods
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+      ports: 
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-app
+  ports:
+    - protocol: TCP
+      port: 80 #service port which is internal purpose - this is optional
+      targetPort: 80 #container port

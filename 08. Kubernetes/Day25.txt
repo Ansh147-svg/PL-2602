@@ -1,0 +1,94 @@
+Day 22 | 07-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+=> Understanding POD
+Pod is the smallest deployable unit in Kubernetes
+Pod helps to run the container(s)
+Every pod will get its own unique IP
+Pod can have one or more containers will share storage, network and lifecycle
+
+=> Pod Lifecycle
+From the birth to death of a pod
+
+Pods are ephemeral - they can die easily - whenever a pod dies and when you recreate the pod using the same manifest file, pod will get created but the IP address of the pod will get changed
+
+lifecycle events of a pod;
+Pending - pod is still in the creation process
+Running - pod is in the running state
+Failed - pod dint get created
+
+
+=> Types of Pods
+1. Single Container Pod - one pod will have one container only - most common type of pod used in real-time
+2. Multi-Container Pod / Side Car Container - one pod will usually have 2 or more containers - monitor app logs
+3. Init Container Pod - initialization of a container
+4. Static Pod
+
+=> How pods communicate with each other?
+Every pod will get its own unique IP
+Pods are ephemeral
+Each pod can communicate with each other using their internal IP addresses, by default - flat networking model
+
+Pods can communicate with each other which are there on the same worker node and also they can communicate with each other which are different worker node as well
+CNI - Container Network Interface plugin is responsible for this networking 
+CNI Plugins - Flannel, Calico, WeaveNet...
+
+=> Creation of Pods
+1. Single Container Pod
+Imperative approach - command
+Declarative approach - manifest file
+
+apiVersion
+kind
+metadata:
+spec:
+
+2. Multi Container Pod
+
+3. Init Container Pod
+
+4. Static Container Pod
+These are managed by the kubelet
+Static container pods are created on a specific worker node
+/etc/kubernetes/manifests --- whatever manifest file that is available in this location, automatically kubelet will execute that manifest file and the resource will get created only on that worker node
+
+=> Pod Restart Policies
+1. Always (default)
+2. OnFailure
+3. Never
+
+=> Kubernetes Services
+K8s Services will help to access the application outside of the cluster i.e in the browser
+
+the manfiest file which is written to create a pod is known as Pod Manifest File
+the manfiest file which is written to create a service is known as service Manifest File
+
+Types of Services;
+1. ClusterIP - default service type
+2. NodePort
+3. LoadBalancer
+4. ExternalName
+
+How service will identify the pods that it should expose?
+
+Service will identify the pod using pod labels. These pod labels we will configure as a "selector" in the service manifest file
+
+Pod Manifest File - pod labels
+Service Manifest File - selector
+
+ClusterIP service will help to access the application with in the cluster only.
+
+To access the application outside of the cluster, we will use either NodePort or LoadBalancer
+
+
+
+
+
+
+
+
+

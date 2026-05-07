@@ -1,0 +1,10 @@
+apiVersion: v1  #since we are creating a pod
+kind: Pod #here we are creating a pod
+metadata: #here we will write info about the pod
+  name: apache-container-pod  #this is a pod name
+spec: #here we will write how the pod should be created - image, port, container name
+  containers:
+    - name: apache-container #container name
+      image: httpd:2.4
+      ports:
+        - containerPort: 80
