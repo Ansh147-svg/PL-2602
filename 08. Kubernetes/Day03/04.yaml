@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: zomato-rs
+  labels:
+    app: zomato #RS labels - optional
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zomato #should match with pod labels
+  template:
+    metadata:
+      labels:
+        app: zomato #this will be referenced in service manifest
+    spec:
+      containers:
+        - name: zomato-container
+          image: kastrov/zomato
+          ports:
+            - containerPort: 3000
+

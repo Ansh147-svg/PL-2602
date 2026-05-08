@@ -1,0 +1,155 @@
+Day 23 | 08-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+=> Kubernetes Services
+K8s Services will help to access the application outside of the cluster i.e in the browser
+
+the manfiest file which is written to create a pod is known as Pod Manifest File
+the manfiest file which is written to create a service is known as service Manifest File
+
+Types of Services;
+1. ClusterIP - default service type - ClusterIP will allow us to access the app within the cluster
+2. NodePort
+3. LoadBalancer
+4. ExternalName
+
+If you want to access the app outside of the cluster (i.e in the browser) we need to use either NodePort or LoadBalancer service type
+
+2. NodePort
+NodePort is a service type in k8s that exposes our application to be accessible externally on a STATIC PORT
+NodePort ranges b/w 30000-32767
+It is not mandatory to mention the NodePort number in the service manifest file
+
+PublicIP:<NodePortNumber>	----------> Access the app
+
+All worker nodes will have a common security group and common IAM Role
+sg-0d6e684665576b9ed
+sg-0d6e684665576b9ed
+
+=> Namespace
+Namespaces are a way to divide the cluster resources b/w multiple teams/users/applications
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://06F7D93EF9EB812B9D9AAC940FB0CF3C.gr7.ap-south-1.eks.amazonaws.com
+  name: kastro-cluster.ap-south-1.eksctl.io
+contexts:
+- context:
+
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://06F7D93EF9EB812B9D9AAC940FB0CF3C.gr7.ap-south-1.eks.amazonaws.com
+  name: kastro-cluster.ap-south-1.eksctl.io
+contexts:
+- context:
+    cluster: kastro-cluster.ap-south-1.eksctl.io
+    namespace: default
+
+Once the namespace is deleted, all the resources that are part of that namespace will automatically get deleted
+
+=> Kubernetes Controllers
+To provide HA for our application we will use controllers
+Controller will ensure the required number of pods, for a specific app, will always be running 24x7
+	replicas: 3
+
+desired state - number of replicas in the manifest file
+observed state - represents from the desired state, how many replicas are running
+
+pod1
+pod2
+pod3	- deleted
+pod4
+
+reconciliation 
+
+Types of K8s Controllers;
+1. ReplicationController
+2. ReplicaSet
+3. Deployment
+4. DaemonSet
+5. StatefulSet
+
+1. ReplicationController
+A RC ensures that a specified number of pod replicas are running at any given time
+If any pod(s) gets deleted, RC will create a new pod(s) to match the desired replica count as per the manifest file
+We can also scale up and scale down the required number of pods
+
+Limitations of RC;
+Limited labels
+No native rolling updates
+Legacy
+
+2. ReplicaSet
+A RS ensures that a specified number of pod replicas are running at any given time
+If any pod(s) gets deleted, RS will create a new pod(s) to match the desired replica count as per the manifest file
+We can also scale up and scale down the required number of pods
+
+RC supports equality based selector - if pod label matches exactly with selector then only the pod will be identified
+RS supports set based selector - our pods can be made identified by multiple labels
+
+RC;
+selector:
+	app: zomato-app
+
+RS;
+selector:
+	matchLabels:
+		app: zomato-app
+		version: v2.1
+		env: prod
+
+Limitations of RS;
+No native rolling updates
+
+3. Deployment
+A deployment manages required number of pods all the time
+Deployment support rolling updates with zero downtime
+rollback to the previous versions is possible
+
+Types of deployment strategies;
+Rolling update (default)
+Recreate
+Blue-Green deployment
+Canary
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

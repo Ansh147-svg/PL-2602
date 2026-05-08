@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swiggy-deployment
+  labels:
+    app: food
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: food #this should match with pod labels
+  template:
+    metadata:
+      labels:
+        app: food #this should be referenced in the service manifest
+    spec:
+      containers:
+        - name: swiggy-container
+          image: kastrov/swiggy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swiggy-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: food
+  ports:
+    - port: 80
+      targetPort: 3000
