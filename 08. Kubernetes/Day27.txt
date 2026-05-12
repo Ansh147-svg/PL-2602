@@ -1,0 +1,231 @@
+Day 24 | 11-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+=> Deployment
+Version 1: kastrov/Zomato
+Version 2: kastrov/Swiggy
+Version 3: kastrov/<custom-image>
+
+kubectl rollout undo deploy/zomato-deployment
+
+kubectl rollout undo deployment food-app --to-revision=1
+
+
+=> Blue-Green Deployment
+Blue Version		- Old version		- currently deployed
+Green Version	- New version	- need to deploy the latest version
+
+# 🔵 Blue Deployment (Version 1 - Stable Release)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: blue
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:skyblue;">
+            <h1>YouTube/LearnWithKASTRO</h1>
+            <h2>This is BLUE (Version 1)</h2>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g "daemon off;"
+
+✔ Green Version (New Release — V2)
+deployment-green.yaml
+
+# 🟢 Green Deployment (Version 2 - New Release)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-green
+spec:
+  replicas: 3 # fully available but not serving traffic yet
+  selector:
+    matchLabels:
+      app: nginx
+      version: green
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: green
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:lightgreen;">
+            <h1>www.learnwithkastro.com</h1>
+            <h2>This is GREEN (Version 2)</h2>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g "daemon off;"
+
+✔ LoadBalancer Service (Initially points to BLUE)
+service-bluegreen.yaml
+
+# 🌐 LoadBalancer Service
+# Initially routes ONLY to the BLUE version (v1)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+    version: blue   # ← Switch this later to "green" for release
+  ports:
+  - port: 80
+    targetPort: 80
+
+
+Limitations:
+If the new version of the application, wont respond, ALL the end users will get affected at a time
+
+=> Canary Deployment
+📌 deployment-v1.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-v1
+spec:
+  replicas: 4 # 100% traffic initial
+  selector:
+    matchLabels:
+      app: nginx
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: v1
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:blue;">
+            <h1 style="color:white;">THIS IS VERSION 1</h1>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+2️⃣ Deployment - Version 2 (Green Page)
+📌 deployment-v2.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-v2
+spec:
+  replicas: 1 # Start with 25% traffic
+  selector:
+    matchLabels:
+      app: nginx
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: v2
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:green;">
+            <h1 style="color:white;">THIS IS VERSION 2 (CANARY)</h1>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+3️⃣ LoadBalancer Service
+📌 service-lb.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx # matches both v1 + v2
+  ports:
+  - port: 80
+    targetPort: 80
+
+kubectl apply -f deployment-v1.yaml
+kubectl apply -f deployment-v2.yaml
+kubectl apply -f service-lb.yaml
+
+kubectl get deployments
+kubectl get pods -o wide
+kubectl get svc nginx-lb
+
+=> Controllers - RC, RS, Deployment (RollingUpdate, ReCreate, B-G, Canary), DaemonSet
+
+=> DaemonSet
+DaemonSet will ensure only one pod is running on one worker node, related to the same application
+Worker Node 1 - 1 pod
+Worker Node 2 - 1 pod
+
+=> Pod Scheduling Strategies
+To control pod placement on a specific worker node(s), we will use pod scheduling strategies
+Node Selector	- simplest
+Node Affinity	- flexible - advanced features
+Pod Affinity/Anti-Affinity - flexible - advanced features
+
+1) Node Selector
+To work with node selector, we will assign labels to the node(s)
+
+ip-192-168-22-73.ap-south-1.compute.internal --------------- env=dev
+ip-192-168-34-129.ap-south-1.compute.internal ----------------- env=test
+
+
+ip-192-168-34-129.ap-south-1.compute.internal   Ready    <none>   136m   v1.34.7-eks-4136f65   alpha.eksctl.io/cluster-name=kastro-cluster,alpha.eksctl.io/nodegroup-name=ng-b44e79d2,beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=t2.medium,beta.kubernetes.io/os=linux,eks.amazonaws.com/capacityType=ON_DEMAND,eks.amazonaws.com/nodegroup-image=ami-0042af6261c0b4bce,eks.amazonaws.com/nodegroup=ng-b44e79d2,eks.amazonaws.com/sourceLaunchTemplateId=lt-0afad7086a00930db,eks.amazonaws.com/sourceLaunchTemplateVersion=1,env=test,failure-domain.beta.kubernetes.io/region=ap-south-1,failure-domain.beta.kubernetes.io/zone=ap-south-1b,k8s.io/cloud-provider-aws=b72a6ee58ec3d2add7eb53d6ca656141,kubernetes.io/arch=amd64,kubernetes.io/hostname=ip-192-168-34-129.ap-south-1.compute.internal,kubernetes.io/os=linux,node.kubernetes.io/instance-type=t2.medium,topology.k8s.aws/zone-id=aps1-az3,topology.kubernetes.io/region=ap-south-1,topology.kubernetes.io/zone=ap-south-1b
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
