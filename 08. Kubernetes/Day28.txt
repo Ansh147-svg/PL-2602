@@ -1,0 +1,484 @@
+Day 25 | 12-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+1. Node Selector
+
+2. Node Affinity
+A more advanced and flexible version of Node Selector
+Two conditions;
+	preferred		- soft rule
+	required		- hard rule
+
+requiredDuringSchedulingIgnoredDuringExecution	---- hard rule --- must and should be followed
+preferredDuringSchedulingIgnoredDuringExecution	---- soft rule
+
+Operators;
+In - the node must have the label key, and its value must match with one of the given values
+- key: env
+   operator: In
+   values: 
+	- dev
+	- test
+
+NotIn - the node must have the label key, but its value must NOT match with the given values
+- key: env
+   operator: NotIn
+   values: 
+	- dev
+	- test
+
+Exist - the node must have the label key, regardless of the value
+- key: env
+   operator: Exist
+
+
+env: prod
+env: dev
+
+app
+app
+
+DoesNotExist - the node must not have the label key
+- key: env
+   operator: DoesNotExist
+
+env: prod
+env: dev
+
+app
+app
+
+
+ip-192-168-10-178.ap-south-1.compute.internal ---------- env=test
+ip-192-168-49-237.ap-south-1.compute.internal ---------- env=dev
+
+
+3. Pod Affinity / Pod Anti-Affinity
+swiggy
+	frontend pods	- worker node1
+	backend pods	- worker node1
+	database pods	- worker node1
+
+swiggy
+	frontend pods	- worker node1
+	backend pods	- worker node2
+	database pods	- worker node3
+
+
+zomato
+	frontend pods	- worker node2
+	backend pods	- worker node2
+	database pods	- worker node2
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: nginx
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-podantiaffinity
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: nginx
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - frontend
+                topologyKey: kubernetes.io/hostname
+
+=> Ingress Controller
+Create the directory structure as below;
+.
+├── app1
+│   ├── Dockerfile
+│   └── index.html
+├── app2
+│   ├── Dockerfile
+│   └── index.html
+├── app3
+│   ├── Dockerfile
+│   └── index.html
+└── k8s
+    ├── app1-deploy.yaml
+    ├── app2-deploy.yaml
+    ├── app3-deploy.yaml
+    └── ingress.yaml
+
+Dockerfile is same in all the directories;
+FROM nginx:alpine
+COPY ./index.html /usr/share/nginx/html/index.html
+
+app1/index.html file content ---->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>App 1 - Ingress Demo</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #ff4e50, #f9d423);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      text-align: center;
+      animation: fadeIn 1s ease-in;
+    }
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+    }
+    p {
+      font-size: 1.5rem;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>🚀 App 1 Loaded</h1>
+    <p>This is the futuristic red version of App 1, powered by Kubernetes & Ingress on AWS EKS.</p>
+  </div>
+</body>
+</html>
+
+
+app2/index.html file content ---->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>App 2 - Ingress Demo</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #56ab2f, #a8e063);
+      font-family: 'Helvetica Neue', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      text-align: center;
+      animation: slideUp 1s ease-in-out;
+    }
+    h1 {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+    }
+    p {
+      font-size: 1.4rem;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>🌿 App 2 is Live</h1>
+    <p>This is App 2, deployed in Kubernetes and beautifully routed via Ingress.</p>
+  </div>
+</body>
+</html>
+
+
+app3/index.html file content ---->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>App 3 - Ingress Demo</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #ffffffcc;
+      text-align: center;
+      animation: zoomIn 1s ease;
+    }
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.3rem;
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>🌊 Welcome to App 3</h1>
+    <p>This is App 3 — clean, responsive, and routed with Kubernetes Ingress on EKS.</p>
+  </div>
+</body>
+</html>
+
+
+Build the images
+docker build -t app1-image ./app1
+docker build -t app2-image ./app2
+docker build -t app3-image ./app3
+
+Tag and Push Your Images to Docker Hub
+docker tag app1-image kastrov/app1-image:latest
+docker tag app2-image kastrov/app2-image:latest
+docker tag app3-image kastrov/app3-image:latest
+
+# Login to Docker Hub
+docker login
+
+# Push images
+docker push kastrov/app1-image:latest
+docker push kastrov/app2-image:latest
+docker push kastrov/app3-image:latest
+
+cd k8s --->
+vi app1-deploy.yaml ---->
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+        - name: app1
+          # Change image name here when using other images
+          image: kastrov/app1-image:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-service
+spec:
+  selector:
+    app: app1
+  ports:
+    - port: 80
+      targetPort: 80
+
+
+Same syntax is application for other deployment yml files.
+
+kubectl apply -f k8s/app1-deploy.yaml
+kubectl apply -f k8s/app2-deploy.yaml
+kubectl apply -f k8s/app3-deploy.yaml
+
+vi ingress.yaml ----->
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apps-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      # DEFAULT route → app1
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app1-service
+            port:
+              number: 80
+
+      # Route to app2
+      - path: /app2
+        pathType: Prefix
+        backend:
+          service:
+            name: app2-service
+            port:
+              number: 80
+
+      # Route to app3
+      - path: /app3
+        pathType: Prefix
+        backend:
+          service:
+            name: app3-service
+            port:
+              number: 80
+
+
+kubectl apply -f k8s/ingress.yaml
+kubectl get ing -w ----> You will see the URL
+
+Get the load balancer URL
+kubectl get svc -n ingress-nginx
+
+Load balancer URL ----> Redirects to app1
+Load balancer URL/app2 ----> Redirects to app2
+Load balancer URL/app3 ----> Redirects to app3
+
+Note: If you have to do any changes to the app, do the changes in index.html file and then follow the below process;
+Rebuild and push images:
+docker build -t kastrov/app1-image ./app1
+docker build -t kastrov/app2-image ./app2
+docker build -t kastrov/app3-image ./app3
+
+docker push kastrov/app1-image
+docker push kastrov/app2-image
+docker push kastrov/app3-image
+
+Restart deployments:
+kubectl rollout restart deployment app1-deployment
+kubectl rollout restart deployment app2-deployment
+kubectl rollout restart deployment app3-deployment
+
+Then open in browser:
+/app1 → red 
+/app2 → green 
+/app3 → blue
+
+
+kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
+
+Tasks: 
+
+https://www.youtube.com/watch?v=3fhvnsNY5fc&list=PLs-PsDpuAuTfG3gFR5DnVD58kT7JBO97x&index=6&t=6941s
+
+https://www.youtube.com/watch?v=LsNYKglLDss&list=PLs-PsDpuAuTfG3gFR5DnVD58kT7JBO97x&index=2&t=4978s
+
+=> Resource Quota and Limit Ranges
+A RQ in K8s limits the total amount of compute resources such as CPU, Memory, Object Count within a namespace
+
+requests	--- the minimum amount of a resource that the container/pod is guaranteed to get
+limits --- the maximum amount of a resource that the container is allowed to use
+
+request: 0.5 Gi
+limit: 1 Gi
+
+requests should always be less than or equal to limits
+
+CPU - cores
+Memory - bytes
+
+1 CPU = 1000 millicores / milliCPUs
+0.5 CPU = 500 millicores / milliCPUs
+0.2 CPU = 200 millicores / milliCPUs
+
+
+resources:
+	requests:
+		cpu: 200m
+	limits:
+		cpu: 500m
+
+resources:
+	requests:
+		memory: 256Mi
+	limits:
+		memory: 512Mi
+
+
+spec:
+	hard:
+		pods: 10
+		services: 5
+		volumes: 5
+
+
+Practice: https://chatgpt.com/share/6a0353ed-9108-8322-8675-1a8ba835ec52
+
+=> Autoscaling in Kubernetes
+CPU > 80% ---- 1 pod +
+CPU > 20% ---- 1 pod -
+
+Types:
+HPA - Horizontal Pod Autoscaler
+VPA - Vertical Pod Autoscaler
+CA - Cluster Autoscaler
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
