@@ -1,0 +1,1225 @@
+Day 26 | 14-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+=> PV & PVC - Persistent Volume & Persistent Volume Claim
+Pre-requisites;
+=> IAM Requirement for Worker Nodes:
+Attach AmazonEBSCSIDriverPolicy to your worker node IAM role.
+This allows Kubernetes to create, attach, detach, and delete EBS volumes dynamically.
+
+=> eksctl doesn’t know which AWS region to use. You have to explicitly set it
+eksctl utils associate-iam-oidc-provider --cluster kastro-cluster --region us-east-1 --approve
+This allows Kubernetes service accounts to assume IAM roles (needed for CSI driver).
+
+=> Check if the EBS CSI driver pods are running:
+kubectl get pods -n kube-system | grep ebs-csi
+
+You should see pods like ebs-csi-controller-... and ebs-csi-node-... in Running state.
+If nothing appears, you need to install it.
+
+=> Install EBS CSI Driver
+Download Helm installation script (Here I will use HELM to do this)
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+Add the Helm repo
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+
+helm repo update
+# This ensures Helm fetches the latest charts from the repo.
+
+helm repo list
+#You should see something like below;
+NAME                     URL
+aws-ebs-csi-driver       https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+
+Install EBS CSI driver
+helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+    --namespace kube-system \
+    --create-namespace \
+    --set image.repository=602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/aws-ebs-csi-driver
+
+Verify installation
+kubectl get pods -n kube-system | grep ebs-csi
+#You should see controller and node pods in Running state.
+
+
+Step 1 — StorageClass for EBS CSI
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc	# Name of the StorageClass (used in PVCs via storageClassName)
+provisioner: ebs.csi.aws.com  # CSI driver for EBS  # Ensures volumes are dynamically created in AWS when PVC requests storage
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+parameters:
+  type: gp3	#AWS EBS volume type (gp3 = General Purpose SSD, newer than gp2)
+
+volumeBindingMode: WaitForFirstConsumer ensures the volume is created in the same AZ as the pod.
+reclaimPolicy: Delete means the EBS volume is deleted automatically when the PVC is deleted.
+
+🔹 Summary of What This StorageClass Does
+Defines a dynamic storage provisioning template for AWS EBS.
+When a PVC requests storage with storageClassName: ebs-sc:
+	Kubernetes uses the AWS EBS CSI driver.
+	Creates a gp3 EBS volume.
+	Binds it to the Pod’s node AZ (thanks to WaitForFirstConsumer).
+	Deletes the EBS volume when the PVC is deleted (Delete policy).
+
+Apply it:
+kubectl apply -f storageclass.yaml
+
+#Check for storage class
+kubectl get sc ----> You will see "ebs-sc" storage class got created
+
+Step 2 — PVC YAML
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ebs-pvc	# Name of the PVC (referenced by Pods to mount storage)
+spec:
+  accessModes:	#Volume can be mounted as read-write by a single node
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi	# Requesting 5GiB of storage
+  storageClassName: ebs-sc		 # Refers to the StorageClass (ebs-sc) we created earlier
+
+🔹 What Happens When You Apply This PVC
+Kubernetes sees storageClassName: ebs-sc.
+The ebs-sc StorageClass provisions a gp3 EBS volume of 5Gi.
+A matching PersistentVolume (PV) is created dynamically.
+This PVC (ebs-pvc) binds to that PV automatically.
+A Pod can then mount this PVC and use it for persistent storage.
+
+kubectl apply -f pvc.yaml
+kubectl get pvc
+#Currently the PVC will be in PENDING State. Because there is no pod which is claiming. Once we create the pod, then we will see the status as BOUND
+
+Step 3 — Deployment YAML (nginx)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ebs-demo
+spec:
+  replicas: 1
+  selector:		# Defines how to identify the pods managed by this Deployment
+    matchLabels:
+      app: nginx-ebs		# Match pods with label "app=nginx-ebs"
+  template:			 # Pod template (used to create new Pods)
+    metadata:
+      labels:
+        app: nginx-ebs	# Label assigned to Pods (must match selector above)
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        volumeMounts:	# Mounts a volume inside the container
+        - name: ebs-storage	# Refers to the volume defined below
+          mountPath: /usr/share/nginx/html # Mount path inside the container # Anything stored here will persist in the EBS volume
+      volumes:
+      - name: ebs-storage		# Defines the volume to mount
+        persistentVolumeClaim:
+          claimName: ebs-pvc	# Uses the PVC we created earlier (ebs-pvc) # PVC dynamically provisions a gp3 EBS volume via 																		StorageClass
+
+kubectl apply -f deployment.yaml
+kubectl get pods
+
+#Now you can check the status of PVC changed to BOUND and observe the ACCESS MODE which is RWO (RWO is by default when we use AWS-EBS)
+
+To check the volume ID in terminal (same volume will also be there in aws cloud as well)
+kubectl get pv <PVC-Name> -o jsonpath='{.spec.csi.volumeHandle}'
+
+Step 4 — Service YAML (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ebs-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-ebs
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+kubectl apply -f service.yaml
+kubectl get svc
+
+Note: If you access the app using URL, you will see error, because;
+nginx doesn’t have permission to read files in the mounted volume, or the directory is empty and nginx doesn’t allow directory listing by default.
+
+Since you mounted the EBS volume to /usr/share/nginx/html, here’s what’s happening:
+
+Why 403 appears
+	Empty volume mount:
+		EBS volume is empty when first created.
+		nginx expects index.html or directory listing.
+		If none exists, nginx returns 403.
+	Permission issues:
+		The directory inside the pod may be owned by root, but nginx runs as www-data (or nginx user).
+		nginx cannot read/write → 403.
+
+So we will write the data in "/usr/share/nginx/html" location
+Anything written to /usr/share/nginx/html inside the pod is persisted to EBS.
+
+Step 5 — Verify Data Persistence
+Get pod name:
+kubectl get pods
+
+Exec into the pod:
+kubectl exec -it <pod-name> -- bash
+cd /usr/share/nginx/html
+echo "Hello EBS" > index.html
+exit
+<LB-URL>/index.html ----> You will see Hello EBS
+
+Restart the pod:
+kubectl delete pod <pod-name>
+kubectl get pods
+
+Access the App in Browser;
+LB-URL/index.html
+
+Exec again and check:
+kubectl exec -it <new-pod-name> -- cat /usr/share/nginx/html/index.html
+
+You should see "Hello EBS", proving data persisted on the EBS volume.
+
+To know which pod is using which VOLUME;
+kubectl get pod -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,VOLUME:.spec.volumes[*].persistentVolumeClaim.claimName
+
+✅ What you learn in this scenario:
+Dynamic provisioning of EBS using CSI driver
+How PVC binds to a PV dynamically
+Pod volume mounting and data persistence
+LoadBalancer service exposing the app
+Necessary IAM roles for EBS operations
+
+Note: Here we have 1 replica, if we have multiple replicas, then the VOLUME gets attached to which pod?
+	EBS volumes only support ReadWriteOnce (RWO):
+		AccessMode					Meaning
+		RWO						Only one node can attach the volume at a time.
+		ReadWriteMany (RWX)		Multiple nodes/pods can mount simultaneously.
+		ReadOnlyMany (ROX)			Multiple nodes/pods can mount as read-only.
+
+Lets scale the deployment and see what happens;
+kubectl scale deployment nginx-ebs-demo --replicas=3
+
+kubectl get pods ---> You will see 3 pods
+Lets check the volumes attached to 3 pods;
+kubectl get pod -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,VOLUME:.spec.volumes[*].persistentVolumeClaim.claimName
+
+You will see all the pods attached to same volume. But how? As I said, EBS support RWO only. So how this happened?
+Kubectl get pods -o wide
+You will see all the pods are running on same node.
+How and why?
+
+EBS volumes are ReadWriteOnce (RWO):
+	Only one pod on one node can mount the volume at a time.
+	The fact that all 3 pods show “Running” is possible because your pods ended up scheduled on the same node, but in reality only one pod can write at a time.
+	If pods are on different nodes, the additional pods would remain Pending.
+
+Kubernetes scheduler enforces this: it will only place pods that use that PVC on the node where the volume can attach.
+You have 2 nodes, but the volume was attached to node 1 first.
+Kubernetes sees that RWO volume is only attachable on node 1, so it schedules all pods which are using same PVC on node 1 only.
+Node 2 cannot host these pods because the volume cannot attach there.
+
+✅ Key insight
+RWO EBS volume is “node-bound” → all pods using the same PVC end up on the same node.
+This is scheduler behavior to satisfy volume attachment rules, not a bug.
+
+Cleanup;
+kubectl delete deployment nginx-ebs-demo
+kubectl delete svc nginx-ebs-svc
+kubectl delete pvc ebs-pvc
+kubectl delete sc ebs-sc
+
+#Verify everything is gone
+kubectl get pods
+kubectl get pvc
+kubectl get pv
+kubectl get sc
+
+
+=> StatefulSet
+Stateful App		- Even if i delete the pod, the data in the pod should be persisted - using PV & PVC
+				- The pod names will be unique - stable identity (First: nginx-0) (Second: nginx-0)
+Stateless App	- If i delete the pod, the data inside the pod will get deleted
+
+Frontend	- stateless
+Backend		- stateless
+Database	- stateful
+
+The service type for statefulset is "headless service"
+ClusterIP: None
+
+ClusterIP
+NodePort
+LoadBalancer
+Headless service
+External Name
+
+Frontend Pods
+DB Pod(s)
+
+🧱 ARCHITECTURE YOU ARE BUILDING
+You will have:
+Stateless Layer
+Python Flask App
+Deployment → 2 replicas
+
+Stateful Layer
+MySQL
+StatefulSet → 1 replica
+Persistent EBS volume (5Gi)
+
+Storage
+Custom StorageClass
+ReclaimPolicy = Retain
+
+✅ STEP 1 – Install Helm (If not installed)
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+✅ STEP 2 – Attach IAM Policy to Worker Node Role
+Policy Name: AmazonEBSCSIDriverPolicy
+
+Why?
+👉 Allows Kubernetes to create & attach EBS volumes.
+
+✅ STEP 3 – Install AWS EBS CSI Driver (Helm)
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+helm repo update
+
+Install:
+helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+  --namespace kube-system
+
+Verify:
+kubectl get pods -n kube-system | grep ebs
+
+✅ STEP 4 – Create Custom StorageClass (Retain Policy)
+
+storageclass-retain.yml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: retain-gp3
+provisioner: ebs.csi.aws.com
+# Retain ensures volume is NOT deleted when PVC is removed
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3
+
+Apply:
+kubectl apply -f storageclass-retain.yml
+
+✅ STEP 5 – Headless Service for MySQL
+Required for StatefulSet stable DNS.
+
+mysql-headless.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  clusterIP: None   # HEADLESS (critical)
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+
+Apply:
+kubectl apply -f mysql-headless.yml
+
+✅ STEP 6 – MySQL StatefulSet (5Gi Persistent Volume)
+
+mysql-statefulset.yml
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql   # Must match headless service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpass
+            - name: MYSQL_DATABASE
+              value: appdb
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: retain-gp3
+        resources:
+          requests:
+            storage: 5Gi
+
+Apply:
+kubectl apply -f mysql-statefulset.yml
+
+Check:
+kubectl get pods
+kubectl get pvc
+
+🧠 IMPORTANT RESULT
+Pod name will ALWAYS be:
+mysql-0
+
+DNS name:
+mysql-0.mysql
+
+Stable forever.
+
+-----------------------------------------------
+Note: if we change statefulset "replicas: 2" then 2 statefulset Pods will be created:
+mysql-0
+mysql-1
+
+❗ VERY IMPORTANT CONCEPT
+👉 Each pod gets its OWN volume
+Pod		PVC					EBS Volume
+mysql-0	mysql-data-mysql-0		vol-aaa
+mysql-1	mysql-data-mysql-1		vol-bbb
+
+❌ Do they share data?
+👉 NO — DATA IS NOT SHARED
+Why?
+StorageClass uses:
+ReadWriteOnce
+EBS supports only single node attachment
+
+👉 So:
+mysql-0 → its own DB
+mysql-1 → completely separate DB
+
+so data in mysql-0 ≠ mysql-1 data
+No replication
+No sync
+👉 You now have 2 independent databases (this is wrong for production)
+
+✅ What if replicas = 1 (Current setup)
+replicas: 1
+👉 Only:
+mysql-0
+One PVC
+One EBS volume
+
+✔️ Behavior
+Simple DB
+No confusion
+Data persists even after restart
+👉 This is the correct setup for basic apps
+
+✅ STEP 7 – Python Flask Application
+
+app.py
+from flask import Flask, request, render_template_string
+import mysql.connector
+
+app = Flask(__name__)
+
+DB_HOST = "mysql-0.mysql"   # StatefulSet DNS
+DB_USER = "root"
+DB_PASS = "rootpass"
+DB_NAME = "appdb"
+
+HTML_FORM = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple TV+ Registration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Apple TV Dynamic Background */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.4;
+            transform: scale(1.1);
+            animation: slowZoom 20s infinite alternate;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
+        }
+
+        /* Animated gradient orbs */
+        .orb {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle at center, rgba(255,45,85,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: floatOrb 25s infinite ease-in-out;
+            z-index: 1;
+        }
+
+        .orb-2 {
+            left: -200px;
+            top: -200px;
+            background: radial-gradient(circle at center, rgba(100,210,255,0.12) 0%, transparent 70%);
+            animation-delay: -5s;
+            width: 800px;
+            height: 800px;
+        }
+
+        .orb-3 {
+            right: -300px;
+            bottom: -200px;
+            background: radial-gradient(circle at center, rgba(255,200,100,0.1) 0%, transparent 70%);
+            animation-delay: -10s;
+            width: 700px;
+            height: 700px;
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        /* Apple TV Header */
+        .apple-tv-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            padding: 0 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo svg {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .logo svg:hover {
+            transform: scale(1.05);
+        }
+
+        .logo span {
+            color: white;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .plus-badge {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .plus-badge:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .hero-title {
+            color: white;
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .hero-subtitle {
+            color: rgba(255,255,255,0.7);
+            font-size: 20px;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+
+        /* Registration Card */
+        .registration-card {
+            background: rgba(20, 20, 25, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: scaleIn 0.6s ease-out 0.3s both;
+        }
+
+        .form-title {
+            color: white;
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-input:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .form-input:focus {
+            background: rgba(255,255,255,0.1);
+            border-color: #ff2d55;
+            box-shadow: 0 0 0 4px rgba(255,45,85,0.1);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255,255,255,0.3);
+            font-weight: 300;
+        }
+
+        /* Gender Selection */
+        .gender-group {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .gender-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .gender-input {
+            display: none;
+        }
+
+        .gender-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .gender-label:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .gender-input:checked + .gender-label {
+            background: #ff2d55;
+            border-color: #ff2d55;
+            color: white;
+            box-shadow: 0 8px 16px rgba(255,45,85,0.3);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #ff2d55 0%, #ff375f 100%);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 24px rgba(255,45,85,0.4);
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:active {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(255,45,85,0.4);
+        }
+
+        /* Success Message */
+        .success-message {
+            background: rgba(48, 209, 88, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(48, 209, 88, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: #30d158;
+            text-align: center;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        /* Featured Content */
+        .featured-content {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .feature-item {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .feature-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .feature-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes floatOrb {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                transform: translate(-5%, -5%) scale(1.05);
+            }
+            50% {
+                transform: translate(5%, 5%) scale(0.95);
+            }
+            75% {
+                transform: translate(-5%, 5%) scale(1.02);
+            }
+        }
+
+        @keyframes slowZoom {
+            0% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 36px;
+            }
+            
+            .hero-subtitle {
+                font-size: 18px;
+            }
+            
+            .registration-card {
+                padding: 2rem;
+            }
+            
+            .gender-group {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .featured-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Apple TV Dynamic Background -->
+    <div class="video-background">
+        <video autoplay loop muted playsinline>
+            <source src="https://videos.pexels.com/video-files/2103099/2103099-uhd_3840_2160_25fps.mp4" type="video/mp4">
+        </video>
+    </div>
+    
+    <!-- Gradient Orbs -->
+    <div class="orb"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    
+    <!-- Overlay -->
+    <div class="overlay"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Apple TV Header -->
+        <div class="apple-tv-header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.71 13.09C18.71 13.09 19.12 10.5 17.5 8.5C15.88 6.5 13.5 6 13.5 6C13.5 6 15 4 12 2C9 4 10.5 6 10.5 6C10.5 6 8.12 6.5 6.5 8.5C4.88 10.5 5.29 13.09 5.29 13.09C5.29 13.09 4 15.5 4 18C4 22 8 22 8 22H16C16 22 20 22 20 18C20 15.5 18.71 13.09 18.71 13.09Z" stroke="white" stroke-width="1.5" fill="transparent"/>
+                    <path d="M12 13V22" stroke="white" stroke-width="1.5"/>
+                    <path d="M12 13L9 10L12 7L15 10L12 13Z" fill="white"/>
+                </svg>
+                <span>Apple TV+</span>
+            </div>
+            <div class="plus-badge">
+                FREE TRIAL
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">Welcome to Apple TV+</h1>
+            <p class="hero-subtitle">Watch award-winning Apple Originals on all your devices.</p>
+        </div>
+
+        {% if request.method == "POST" %}
+        <div class="success-message">
+            ✨ Welcome to Apple TV+! Your registration was successful.
+        </div>
+        {% endif %}
+
+        <!-- Registration Card -->
+        <div class="registration-card">
+            <h2 class="form-title">Create Your Account</h2>
+            <form method="post">
+                <div class="form-group">
+                    <label class="form-label" for="name">FULL NAME</label>
+                    <input class="form-input" type="text" id="name" name="name" placeholder="Enter your name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">EMAIL ADDRESS</label>
+                    <input class="form-input" type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">GENDER</label>
+                    <div class="gender-group">
+                        <div class="gender-option">
+                            <input type="radio" id="male" name="gender" value="Male" class="gender-input">
+                            <label for="male" class="gender-label">♂ Male</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="female" name="gender" value="Female" class="gender-input">
+                            <label for="female" class="gender-label">♀ Female</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="other" name="gender" value="Other" class="gender-input">
+                            <label for="other" class="gender-label">⚲ Other</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    Start Watching Now
+                </button>
+            </form>
+        </div>
+
+        <!-- Featured Content -->
+        <div class="featured-content">
+            <div class="feature-item">
+                <span class="feature-icon">🎬</span>
+                <h3 class="feature-title">Apple Originals</h3>
+                <p class="feature-desc">Exclusive shows and movies</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">📱</span>
+                <h3 class="feature-title">All Devices</h3>
+                <p class="feature-desc">Watch on your iPhone, iPad, and TV</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">📺</span>
+                <h3 class="feature-title">4K HDR</h3>
+                <p class="feature-desc">Cinematic quality streaming</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+def get_connection():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME
+    )
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        gender = request.form["gender"]
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100),
+                email VARCHAR(100),
+                gender VARCHAR(20)
+            )
+        """)
+
+        cursor.execute(
+            "INSERT INTO users (name, email, gender) VALUES (%s, %s, %s)",
+            (name, email, gender)
+        )
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+    return render_template_string(HTML_FORM)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+
+🧠 HOW APP CONNECTS TO MYSQL
+Key line:
+DB_HOST = "mysql-0.mysql"
+
+Explanation:
+✔ mysql-0 → Pod name (stable)
+✔ .mysql → Headless service name
+✔ Kubernetes DNS resolves directly
+No IP hardcoding needed.
+
+✅ STEP 8 – Dockerfile
+Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY app.py .
+RUN pip install flask mysql-connector-python
+CMD ["python", "app.py"]
+
+✅ STEP 9 – Build & Push Image
+Build:
+docker build -t kastrov/stateful-demo:v1 .
+
+Push:
+docker push kastrov/stateful-demo:v1
+
+✅ STEP 10 – Deployment (2 App Pods)
+
+app-deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  replicas: 2	#all the replicas will connect to same headless service. 
+
+  selector:
+    matchLabels:
+      app: flask
+
+  template:
+    metadata:
+      labels:
+        app: flask
+    spec:
+      containers:
+        - name: flask
+          image: kastrov/stateful-demo:v1
+          ports:
+            - containerPort: 5000
+
+
+Apply:
+kubectl apply -f app-deployment.yml
+
+✅ STEP 11 – Service for App
+app-service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  type: NodePort
+  selector:
+    app: flask
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30007
+
+
+Apply:
+kubectl apply -f app-service.yml
+
+Access:
+http://<node-ip>:30007
+
+✅ STEP 12 – Persistence Verification
+Insert data via UI.
+
+Then:
+kubectl exec -it mysql-0 -- mysql -uroot -prootpass
+
+Inside MySQL:
+USE appdb;
+SELECT * FROM users;
+
+🔥 STEP 13 – CRITICAL TEST (StatefulSet Magic)
+Delete pod:
+kubectl delete pod mysql-0
+
+Wait for recreation:
+kubectl get pods -w
+
+Re-enter:
+kubectl exec -it mysql-0 -- mysql -uroot -prootpass
+
+Run:
+USE appdb;
+SELECT * FROM users;
+✅ DATA STILL EXISTS
+
+❓ WHY DATA SURVIVES?
+Because:
+✔ PVC not deleted
+✔ EBS volume retained
+✔ Volume reattached to new pod
+
+=> ConfigMap & Secrets
+ConfigMap ----> non sensitive data
+Secret -----> sensitive 
+
+value: rootpass / alpha-numeric characters
+
+===============================
+ArgoCD
+Taints and Tolerations
+RBAC
+Probes
+Monitoring - Prometheus & grafana
+HELM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
