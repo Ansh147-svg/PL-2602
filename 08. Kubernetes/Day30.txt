@@ -1,0 +1,81 @@
+Day 27 | 15-05-2026 
+=====================================================
+=====================
+Module 6: Kubernetes
+=====================
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+There are two way to inject configmap and secrets into a pod 
+1. Environment variables
+2. Volume mounts
+
+
+=> ARGO CD
+GitOps
+
+CI / CD ----> Jenkins
+
+Changes to the manifest file ---> Updated image version ----> Jenkins will get a notification and triggers the pipeline
+image:v1 -----> image:v2
+
+Jenkins doesn't have the permissions to update the resources that are running in the Kubernetes cluster
+
+When we do any changes in the manifest files which are available in GitHub repo, ARGO CD will get a notifications and immediately updates the resources in the Kubernetes cluster.
+
+Jenkins - get the source code, create docker image, has to be updated in the k8s manifests
+Argo CD - to deploy to k8s
+
+learnwithkastro@gmail.com
+
+=> Taints and Tolerations
+A taint is a property applied to a node that prevents pods from being scheduled on it unless the pod explicitly tolerates that taint
+
+https://chatgpt.com/share/6a0744d1-22cc-8323-826a-7785ef768e36
+
+=> RBAC
+Roll Based Access Control
+
+ServiceAccount
+Role
+Role Binding
+
+
+| Verb               | Purpose                                                               |
+| ------------------ | --------------------------------------------------------------------- |
+| `get`              | Read a specific resource                                              |
+| `list`             | List multiple resources                                               |
+| `watch`            | Watch for resource changes in real time                               |
+| `create`           | Create a new resource                                                 |
+| `update`           | Modify an existing resource                                           |
+| `patch`            | Partially update a resource                                           |
+| `delete`           | Delete a resource                                                     |
+| `deletecollection` | Delete multiple resources at once                                     |
+| `proxy`            | Access resource via proxy                                             |
+| `use`              | Use specific resources (mainly Pod Security Policies / special cases) |
+| `bind`             | Bind roles to subjects                                                |
+| `escalate`         | Create/modify roles with permissions you may not already have         |
+| `impersonate`      | Act as another user, group, or service account                        |
+| `approve`          | Approve certificate signing requests (CSR)                            |
+| `sign`             | Sign certificates                                                     |
+| `renew`            | Renew leases/certificates                                             |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

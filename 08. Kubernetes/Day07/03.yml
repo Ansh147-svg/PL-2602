@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: default
+type: Opaque
+data:
+  DB_PASSWORD: Um9vdDEyMw==
+  API_KEY: S2FzdHJvLU5ldGZsaXg=
