@@ -1,0 +1,166 @@
+Day 28 | 18-05-2026 
+=====================================================
+=====================
+Module 7: Ansible
+=====================
+ChatGPT Link: https://chatgpt.com/share/6a0b3d38-47e0-8320-abd8-bbb39ab72ca2
+
+Interview Preparation: https://drive.google.com/drive/folders/1CKkBTLs9fsGG-iB3iTkqasRV1raSIA1S
+
+Ansible Installation on Master Node
+sudo dnf install python3-pip -y
+pip install ansible
+ansible --version
+
+Setting up the host inventory file
+Note: By default, in the latest versions we will not have host inventory file in /etc/ansible/hosts path. We need to explicitly create this path and also the inventory file
+
+Step 1 — Create /etc/ansible/ directory
+sudo mkdir -p /etc/ansible
+
+Step 2 — Create a config file
+sudo nano /etc/ansible/ansible.cfg
+
+Paste this minimal configuration:
+[defaults]
+inventory=/etc/ansible/hosts
+host_key_checking=False
+
+Save & exit.
+
+Step 3 — Create the hosts inventory file
+sudo nano /etc/ansible/hosts
+
+Add your hosts:
+[dev-servers]
+your-ec2-private-ip-here
+
+[test-servers]
+your-ec2-private-ip-here
+
+Save & exit.
+
+Ansible Master Node Commands;
+    1  passwd root
+    2  vi /etc/ssh/sshd_config
+    3  systemctl restart sshd
+    4  systemctl status sshd
+    5  clear
+    6  ansible --version
+    7  sudo mkdir -p /etc/ansible
+    8  sudo nano /etc/ansible/ansible.cfg
+    9  sudo nano /etc/ansible/hosts
+   10  ssh-keygen
+   11  ssh-copy-id root@172.31.12.75
+   12  ssh 172.31.12.75
+   13  ssh-copy-id root@172.31.4.203
+   14  ssh 172.31.4.203
+   15  ssh-copy-id root@172.31.3.28
+   16  ssh 172.31.3.28
+   17  ssh-copy-id root@172.31.1.189
+   18  ssh 172.31.1.189
+   19  clear
+   20  ansible all -m ping
+   21  ansible dev-servers -m ping
+   22  ansible test-servers -m ping
+   23  ansible all -m ping
+
+
+Ansible Worker Node Commands;
+    1  passwd root
+    2  vi /etc/ssh/sshd_config
+    3  systemctl restart sshd
+    4  systemctl status sshd
+
+
+=> Working with Ansible
+3 ways of working with ansible;
+1. Adhoc Commands	- direct commands		- simple Linux commands
+2. Modules			- direct commands
+3. Playbooks			- writing the yaml files
+
+
+
+[dev-servers]
+172.31.12.75
+172.31.4.203
+
+[test-servers]
+172.31.3.28
+172.31.1.189
+
+
+Modules
+Modules works on key-value pairs
+
+Name: Kastro
+Age: 33
+Gender: Male
+Role: MLOps Engineer
+
+yum module states;
+present - install 
+absent - uninstall
+latest - update
+
+service modules;
+started = start
+stopped = stop
+restarted = restart
+enabled = enable
+
+=> Playbooks
+Playbook is a file which is used to automate the various tasks execution.
+Playbook is a collection of multiple modules - using playbook we can execute multiple modules at a time
+Writing playbook is one time activity - execution can be done multiple times
+Playbooks are writing using YAML
+Any playbook in ansible starts with --- and ends with ... (these are optional)
+we write playbook in list format - we can also write in array format
+env
+ - dev
+ - test
+Ansible playbooks will have an extension as .yaml or .yml
+Playbooks are case sensitive and indentations are important
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

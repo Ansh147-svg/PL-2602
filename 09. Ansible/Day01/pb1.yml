@@ -1,0 +1,7 @@
+---
+- name: this playbook checks the internet connectivity
+  hosts: all
+  tasks:
+    - name: testing the connectivity
+      ping:
+...
