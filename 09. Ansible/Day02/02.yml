@@ -1,0 +1,17 @@
+---
+- name: apache uninstallation
+  hosts: all
+  become: yes
+  tasks:
+    - name: uninstallation of apache
+      yum:
+        name: httpd
+        state: absent
+    - name: print message
+      debug:
+        msg: "Apache is uninstalled successfully"
+    - name: start apache
+      service:
+        name: httpd
+        state: started
+...

@@ -1,0 +1,17 @@
+---
+- name: dynamic variables-demo
+  hosts: all
+  vars:
+    a: git
+    b: maven
+    c: docker
+  tasks:
+    - name: install git
+      yum: name={{a}} state=present
+    - name: install maven
+      yum: name={{b}} state=present
+    - name: install docker
+      yum: name={{c}} state=present
+    - name: install custom package
+      yum: name={{d}} state=present
+...

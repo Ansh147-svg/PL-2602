@@ -1,0 +1,17 @@
+---
+- name: apache installation
+  hosts: all
+  become: yes
+  tasks:
+    - name: installation of apache
+      yum: 
+        name: httpd
+        state: present
+    - name: print message
+      debug:
+        msg: "Apache is installed successfully"
+    - name: start apache
+      service:
+        name: httpd
+        state: started
+...

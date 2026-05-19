@@ -1,0 +1,118 @@
+Day 29 | 19-05-2026 
+=====================================================
+=====================
+Module 7: Ansible
+=====================
+ChatGPT Link: https://chatgpt.com/share/6a0b3d38-47e0-8320-abd8-bbb39ab72ca2
+
+Interview Preparation: https://drive.google.com/drive/folders/1CKkBTLs9fsGG-iB3iTkqasRV1raSIA1S
+
+Ansible Installation on Master Node
+sudo dnf install python3-pip -y
+pip install ansible
+ansible --version
+
+Setting up the host inventory file
+Note: By default, in the latest versions we will not have host inventory file in /etc/ansible/hosts path. We need to explicitly create this path and also the inventory file
+
+Step 1 — Create /etc/ansible/ directory
+sudo mkdir -p /etc/ansible
+
+Step 2 — Create a config file
+sudo nano /etc/ansible/ansible.cfg
+
+Paste this minimal configuration:
+[defaults]
+inventory=/etc/ansible/hosts
+host_key_checking=False
+
+Save & exit.
+
+Step 3 — Create the hosts inventory file
+sudo nano /etc/ansible/hosts
+
+Add your hosts:
+[dev-servers]
+your-ec2-private-ip-here
+
+[test-servers]
+your-ec2-private-ip-here
+
+Save & exit.
+
+=> COPY
+
+=> DEBUG
+
+=> USER
+
+=> YUM
+
+=> SETUP/DEBUG - will show the system info of the worker nodes
+
+=> Ansible Tags
+Playbook ---- 10 tasks ----- execute only 3 tasks ---- ansible tags
+
+=> Variables - instead of hard-coding of the values, we will use variables concept.
+	Static variable		- which are defined inside the playbook
+	Dynamic variable	- which are not defined inside the playbook
+
+=> LOOPS - repeats the same task multiple times / in ansible loops are used to reduce the number of lines in a playbook
+
+
+Practice Tasks:
+https://chatgpt.com/share/6a0c8fa0-5570-8324-a0ad-453fc9fc076b
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

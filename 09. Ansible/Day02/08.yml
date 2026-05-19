@@ -1,0 +1,35 @@
+---
+- name: playbook on tags
+  hosts: all
+  become: yes
+  tasks:
+    - name: installation of git
+      yum:
+        name: git
+        state: present
+      tags: git
+    
+    - name: installation of maven
+      yum:
+        name: maven
+        state: present
+      tags: maven
+
+    - name: installation of docker
+      yum:
+        name: docker
+        state: present
+      tags: docker
+
+    - name: start docker
+      yum:
+        name: docker
+        state: started
+      tags: startdocker
+
+    - name: creation of user
+      user:
+        name: kastro-ansible
+        state: present
+      tags: user-kastro
+...

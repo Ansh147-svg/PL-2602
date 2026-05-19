@@ -1,0 +1,23 @@
+---
+- name: deploying custom app in nginx
+  hosts: all
+  become: yes
+  tasks:
+    - name: installation of nginx
+      yum:
+        name: nginx
+        state: present
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+    - name: copy the html file from local
+      copy: 
+        src: index.html
+        dest: /usr/share/nginx/html/index.html
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+...

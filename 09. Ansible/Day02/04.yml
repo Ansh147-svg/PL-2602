@@ -1,0 +1,15 @@
+---
+- name: creation of users and copying of files
+  hosts: all
+  become: yes
+  tasks:
+    - name: creation of user
+      user:
+        name: kastro
+        state: present
+
+    - name: copy the files
+      copy: 
+        src: ansible.py
+        dest: /home/ec2-user
+...
