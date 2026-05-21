@@ -1,0 +1,210 @@
+Day 30 | 21-05-2026 
+=====================================================
+=====================
+Module 7: Ansible
+=====================
+ChatGPT Link: https://chatgpt.com/share/6a0b3d38-47e0-8320-abd8-bbb39ab72ca2
+
+Interview Preparation: https://drive.google.com/drive/folders/1CKkBTLs9fsGG-iB3iTkqasRV1raSIA1S
+
+Ansible Installation on Master Node
+sudo dnf install python3-pip -y
+pip install ansible
+ansible --version
+
+Setting up the host inventory file
+Note: By default, in the latest versions we will not have host inventory file in /etc/ansible/hosts path. We need to explicitly create this path and also the inventory file
+
+Step 1 — Create /etc/ansible/ directory
+sudo mkdir -p /etc/ansible
+
+Step 2 — Create a config file
+sudo nano /etc/ansible/ansible.cfg
+
+Paste this minimal configuration:
+[defaults]
+inventory=/etc/ansible/hosts
+host_key_checking=False
+
+Save & exit.
+
+Step 3 — Create the hosts inventory file
+sudo nano /etc/ansible/hosts
+
+Add your hosts:
+[dev-servers]
+your-ec2-private-ip-here
+
+[test-servers]
+your-ec2-private-ip-here
+
+Save & exit.
+
+
+=> Playbook with Adhoc Commands
+
+=> Notify and Handlers
+10 tasks - playbook -
+
+git install
+maven install
+git version
+docker install
+nginx install
+maven version
+nginx enable
+docker enable
+nginx start
+nginx status
+docker start
+docker status
+
+git install
+git version
+maven install
+maven version
+docker install
+docker enable
+docker start
+docker status
+nginx install
+nginx enable
+nginx start
+nginx status
+
+=> Conditional Module - WHEN
+
+Homogenous servers		- servers with same OS and flavours
+Heterogenous servers		- servers with different OS and flavours
+
+
+Amazon Linux 	- RedHat
+Ubuntu			- Debian
+
+=> LOOKUP Module
+file --- data --- instance
+playbook --- go and find the file on my instance and run that file using playbook
+
+=> UI for docker ---- docker portrainer
+	UI for ansible ---- Ansible Tower
+
+https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.0-ea/html-single/red_hat_ansible_automation_platform_installation_guide/index
+
+=> Ansible Strategies
+linear (default) - each task will get executed once after its previous task is successfully executed (2 minutes)
+
+free - all the tasks will get executed at a time (1 minute)
+
+=> Ansible Roles
+We will write separate playbooks for each module and then we can call whichever playbook we need - Ansible Roles
+Ansible roles are used to divide playbooks into a directory structure
+When we create a role, ansible generated a standard directory structure
+
+3 Roles
+packages
+users
+webservers
+
+=> Ansible Galaxy
+If you dont want to manaually create a directory structure we will use ansible galaxy
+Ansible galaxy has pre-built roles
+
+=> Ansible Vault
+Ansible vault will encrypt the yaml files
+
+=> Asynchronous and Polling
+For every task in ansible we can set the time limit
+If the tasks is not performed/executed/completed in that time limit, ansible will stop playbook execution - asynchronous and polling
+
+=> JINJA2 Templates
+Jinja2 is a templating engine used in ansible for dynamically generating the files, configuration, scripts based on variables
+
+
+
+=> Probes and Helm Directory Structure
+
+
+
+
+
+App - Java 8 - Ant is the Build tool	
+Tomcat - 8 version	---------> Tomcat 9
+OS: 7.8 -----------> 9.0
+
+Azure Cloud
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,8 @@
+---
+- name: heterogenous sevrers - part 1
+  hosts: all
+  tasks:
+    - name: install git on RedHat
+      yum: name=git state=present
+    - name: install git on ubuntu
+      apt: name=git state=present

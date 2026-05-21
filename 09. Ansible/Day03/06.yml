@@ -1,0 +1,5 @@
+- name: ansible strategy playbook
+  hosts:
+  strategy: Free
+  tasks:
+    
