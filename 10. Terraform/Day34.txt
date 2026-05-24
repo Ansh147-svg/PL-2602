@@ -1,0 +1,106 @@
+Day 31 | 22-05-2026 
+=====================================================
+=====================
+Module 8: Terraform
+=====================
+1. Linux Fundamentals
+2. Git and GitHub 
+3. Maven 
+4. Tomcat
+5. Jenkins
+6. Docker
+7. Kubernetes
+8. Ansible
+
+================
+Shell Scripting (DIY)
+================
+4 Projects
+4 Projects
+2 Projects
+
+========
+10 Projects
+========
+
+1. Zomato Deployment
+2. Swiggy Deployment
+3. Book My Show Deployment
+4. Ecommerce Deployment
+5. Multi-Branch Pipeline Deployment
+6. Domain Routing Project
+7. Microservices App Deployment
+8. Mock Exam App
+
+=================
+7 Capstone Projects
+=================
+
+
+Terraform is used to automate the infrastructure creation
+Infrastructure - Instances, VPCs, IAM Users/Roles, S3 Buckets....
+Terraform is infrastructure automation tool
+
+Pulimi and OpenToFu
+
+Using Terraform we can create the infra in any cloud
+Terraform is cloud independent
+
+AWS - Cloud Formation
+GCP - Deployment Provider
+Azure - Azure Resource Manager
+
+HCL - Hashicorp Configuration Language
+
+Any terraform files will have ".tf" as an extension
+
+provider.tf**
+version.tf**
+main.tf
+variables.tf
+terraform.tfvars
+output.tf
+
+terraform.tfstate
+
+terraform init		- initialize the terraform - terraform downloads the provider plugins - Provider (AWS/GCP/Azure)
+terraform validate	- it will verify whether the syntax is valid or not
+terraform fmt		- it will arrange the structure of terraform file in a decent way (aligning)
+terraform plan	- terraform will analyze all the .tf files in the current location and then it will tell us what resource(s) will get created when we run the code
+terraform apply	- actual resource will get created
+terraform destroy	- the resources which are created using terraform will get destroyed
+
+Blocks
+Labels
+Arguments
+
+
+{
+<Arguments>
+}
+
+Note: In terraform never use spaces. If you want to join/combine two words in a terraform file use _ (identifier)
+aws_instance
+instance_type
+
+terraform.lock.hcl consists of provider version
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
