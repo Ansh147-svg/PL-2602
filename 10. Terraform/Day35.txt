@@ -1,0 +1,42 @@
+Day 32 | 22-05-2026 
+=====================================================
+=====================
+Module 8: Terraform
+=====================
+
+=> Variables
+To avoid hard coding of the values, we will use variables.
+variables block
+Variables can be declared in a separate file which is known as terraform.tfvars
+To refer a variable, var.<var_name>
+
+default ---- 
+
+1) length (list) - prints the number of elements in a list
+
+2) concat - will combine multiple lists into a single list
+
+3) element(list, index) - returns the element at the specified index in a list
+
+4) zipmap(key, value) - create a map from the list of keys and list of values
+
+5) lookup - retrieves the value associated with a specific key in a map
+
+6) join - joins the elements of a list into a single string using the specified separator (, . : ; -.....)
+
+7) set - to print unique values
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
