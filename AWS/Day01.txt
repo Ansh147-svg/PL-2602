@@ -1,0 +1,90 @@
+AWS Module - Day 01
+============================
+Slack Notification Video: https://youtu.be/A0DFJcZLV8o
+
+Cloud Computing is a term referred to storing and accessing data over the internet
+
+Cloud Service Providers
+
+
+Cloud Computing Models - How and where to deploy
+
+1. Service based models - IaaS, PaaS, SaaS
+On-premises: everything has to be managed by the organization
+IaaS - Cloud (Servers, Storage, Networking, Virtualization), You (OS, Middleware, Runtime, App)
+PaaS - Cloud (Servers, Storage, Networking, Virtualization, OS, Middleware), You (Data, App)
+SaaS - Cloud (Servers, Storage, Networking, Virtualization, OS, Middleware, Data, App), You (Code)
+
+2. Deployment based models - Public, Private, Hybrid, Community
+Public Cloud - Bus - Accessible to everyone (AWS, Azure, GCP) - pay as you go / pay as you use
+Private Cloud - Car - Accessible to specific companies (IBM Cloud) - high cost / huge up-front cost
+Hybrid Cloud - Taxi - Public Cloud + Private Cloud - Not so costly - pay as you go / pay as you use
+
+
+=> AWS Global Infrastructure 
+Regions 
+AZs
+
+=> Creation of AWS Account
+Valid Email ID
+Valid Mobile Number
+Valid Credit/Debit Card
+PAN Card Number
+
+AWS Free Tier
+Get started for free with up to $200 in credits
+
+AWS Support Plans
+https://aws.amazon.com/premiumsupport/plans/?trk=44307514-e1f3-460c-9905-c9d33f83ba5c&sc_channel=ps
+
+Basic				- Free, No technical support, knowledge base only
+Developer			- $29/month minimum, 12-24 business hours, email only, 1 user - unlimited requests
+Business				- $100/month minimum, 1 hour (24/7), Email, Chat, Phone, All users - unlimited requests
+Enterprise on-ramp	- $5500/month minimum, 30 minutes, Email, Chat, Phone, All users + pool of TAMs
+Enterprise			- $15000/month minimum, 15 minutes, Email, Chat, Phone, All users + dedicate TAM
+
+
+=> AWS Services
+200+ services
+
+Region Specific Services	- the resources which are created in a specific region are available only in that region
+Global Services			- 
+
+Layer 1: 
+EC2, S3, IAM, VPC, Route53, ELB, EBS, Secrets Manager, Sessions Manager, CloudFront, Cloud Watch, CloudTrial,Certificate Manager, Aurora and RDS, SNS
+
+Layer 2:
+Lambda, API Gateway, DynamoDB
+
+Layer 3:
+Code Build, Code Deploy, Code Pipeline, Elastic Beanstalk, Cloud Formation
+
+Alternative;
+Azure-DevOps
+
+
+Azure Cloud
+Azure-DevOps: azure repos, azure pipelines....
+DevOps
+
+20+ services
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
