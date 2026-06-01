@@ -1,0 +1,35 @@
+version: "3"
+services: 
+  db: #service name
+    image: mysql:8.0
+    container_name: mysql_db
+    environment: 
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: training
+      MYSQL_USER: devops
+      MYSQL_PASSWORD: devops123
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - webapp_net
+
+  web: #service name - any name can be given
+    build: .
+    container_name: flask_web_container
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: devops
+      DB_PASSWORD: devops123
+      DB_NAME: training
+    depends_on: #ensures the db container starts before the web container
+      - db
+    networks:
+      - webapp_net
+
+volumes: 
+  db_data:  #volume name
+networks:
+  webapp_net: #network name - any name can be given
+

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Learn With KASTRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --aws-orange: #FF9900;
+    --aws-dark: #0A1628;
+    --aws-navy: #0F2040;
+    --aws-blue: #1A3A6B;
+    --aws-light-blue: #4A90D9;
+    --text-primary: #F0F4FF;
+    --text-secondary: #8FA3C8;
+    --text-muted: #4A6080;
+    --border: rgba(74, 144, 217, 0.18);
+    --card-bg: rgba(10, 22, 42, 0.75);
+  }
+
+  html, body {
+    min-height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--aws-dark);
+    color: var(--text-primary);
+    overflow-x: hidden;
+  }
+
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 10% 10%, rgba(26,58,107,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 90%, rgba(255,153,0,0.06) 0%, transparent 55%),
+      linear-gradient(160deg, #060e1e 0%, #0A1628 50%, #0d1e3a 100%);
+    pointer-events: none;
+  }
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(74,144,217,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,144,217,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 48px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(6, 14, 30, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px;
+    letter-spacing: -0.02em; color: var(--text-primary); text-decoration: none;
+  }
+  .logo-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--aws-orange) 0%, #e07800 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: #fff; font-family: 'Syne', sans-serif;
+    box-shadow: 0 4px 14px rgba(255,153,0,0.35);
+  }
+  .logo span { color: var(--aws-orange); }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 100px;
+    background: rgba(74,144,217,0.08); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .user-dot { width: 7px; height: 7px; border-radius: 50%; background: #4cde80; box-shadow: 0 0 6px #4cde80; }
+
+  .btn-logout {
+    padding: 7px 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: var(--text-secondary); cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-logout:hover { border-color: rgba(255,100,100,0.4); color: #ff8080; }
+
+  /* ── Main ── */
+  main {
+    position: relative; z-index: 10;
+    max-width: 1100px; margin: 0 auto;
+    padding: 52px 32px 80px;
+  }
+
+  .page-header { margin-bottom: 48px; animation: fade-up 0.5s ease both; }
+
+  .page-eyebrow {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--aws-orange); font-weight: 500; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .page-eyebrow::before { content: ''; display: block; width: 24px; height: 2px; background: var(--aws-orange); border-radius: 2px; }
+
+  .page-title {
+    font-family: 'Syne', sans-serif; font-size: clamp(26px, 3.5vw, 38px);
+    font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+    color: var(--text-primary); margin-bottom: 10px;
+  }
+  .page-title em { font-style: normal; color: var(--aws-orange); }
+
+  .page-subtitle { font-size: 15px; color: var(--text-secondary); font-weight: 300; }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    margin-top: 24px;
+    background: rgba(255,255,255,0.05); border-radius: 100px;
+    height: 6px; width: 280px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--aws-orange), #ffb84d);
+    width: 0%;
+    transition: width 0.6s ease;
+  }
+  .progress-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  /* ── Search ── */
+  .search-wrap {
+    position: relative; margin-bottom: 36px;
+    animation: fade-up 0.5s 0.1s ease both;
+  }
+  .search-icon {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); width: 17px; height: 17px; pointer-events: none;
+  }
+  .search-input {
+    width: 100%; max-width: 360px;
+    padding: 12px 16px 12px 44px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 10px; outline: none;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { border-color: rgba(255,153,0,0.4); box-shadow: 0 0 0 3px rgba(255,153,0,0.08); }
+
+  /* ── Services Grid ── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .service-card {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    overflow: hidden;
+    animation: fade-up 0.5s ease both;
+    backdrop-filter: blur(12px);
+  }
+
+  .service-card::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(ellipse at top left, rgba(255,153,0,0.08) 0%, transparent 70%);
+    transition: opacity 0.3s;
+  }
+
+  .service-card:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,153,0,0.25); border-color: rgba(255,153,0,0.3); }
+  .service-card:hover::before { opacity: 1; }
+
+  .service-card.completed { border-color: rgba(76,222,128,0.25); }
+  .service-card.completed::after {
+    content: '✓'; position: absolute; top: 14px; right: 16px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(76,222,128,0.15); border: 1px solid rgba(76,222,128,0.3);
+    font-size: 11px; color: #4cde80;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+
+  /* Card number */
+  .card-number {
+    position: absolute; top: 16px; left: 24px;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); letter-spacing: 0.05em;
+  }
+
+  /* Icon box */
+  .icon-box {
+    width: 52px; height: 52px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 20px 0 16px;
+    font-size: 26px; line-height: 1;
+    transition: transform 0.2s;
+    position: relative; z-index: 1;
+  }
+  .service-card:hover .icon-box { transform: scale(1.08); }
+
+  .service-name {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+    color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 5px;
+    position: relative; z-index: 1;
+  }
+
+  .service-desc {
+    font-size: 12px; color: var(--text-muted); line-height: 1.55;
+    position: relative; z-index: 1;
+  }
+
+  .card-arrow {
+    position: absolute; bottom: 20px; right: 20px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,153,0,0.1); border: 1px solid rgba(255,153,0,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--aws-orange);
+    opacity: 0; transform: translateX(-4px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .service-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+  /* Empty search state */
+  .empty-state {
+    display: none; grid-column: 1/-1;
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted); font-size: 15px;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 768px) {
+    header { padding: 0 20px; }
+    main { padding: 36px 20px 60px; }
+    .services-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .user-pill { display: none; }
+  }
+  @media (max-width: 480px) {
+    .services-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="grid-overlay"></div>
+
+<header>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">K</div>
+    Learn With <span>&nbsp;KASTRO</span>
+  </a>
+  <div class="header-right">
+    <div class="user-pill">
+      <span class="user-dot"></span>
+      <span id="user-email">student</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<main>
+  <div class="page-header">
+    <div class="page-eyebrow">Your preparation path</div>
+    <h1 class="page-title">AWS <em>Services</em> Library</h1>
+    <p class="page-subtitle">Click any service to open its study material. Track your progress below.</p>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <p class="progress-label" id="progress-label">0 of 20 completed</p>
+  </div>
+
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <input class="search-input" type="text" placeholder="Search a service..." id="search-input" oninput="filterServices()"/>
+  </div>
+
+  <div class="services-grid" id="services-grid">
+    <!-- Cards injected by JS -->
+    <div class="empty-state" id="empty-state">No services match your search.</div>
+  </div>
+</main>
+
+<script>
+  // ─────────────────────────────────────────────────────────
+  // SERVICE LIST — 20 services
+  // file: exact filename in your S3 bucket
+  // If you rename a file, update the matching "file" value here.
+  // ─────────────────────────────────────────────────────────
+  const SERVICES = [
+    { num: '01', name: 'EC2',           file: '01_ec2.html',              icon: '🖥️',  color: '#FF9900', bg: 'rgba(255,153,0,0.1)',    desc: 'Elastic Compute Cloud — virtual servers' },
+    { num: '02', name: 'S3',            file: '02_s3.html',               icon: '🪣',  color: '#3F8EFC', bg: 'rgba(63,142,252,0.1)',   desc: 'Simple Storage Service — scalable object storage' },
+    { num: '03', name: 'VPC',           file: '03_vpc.html',              icon: '🌐',  color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)',   desc: 'Virtual Private Cloud — isolated networks' },
+    { num: '04', name: 'IAM',           file: '04_iam.html',              icon: '🔐',  color: '#EC4899', bg: 'rgba(236,72,153,0.1)',   desc: 'Identity & Access Management — users & roles' },
+    { num: '05', name: 'RDS',           file: '05_rds.html',              icon: '🗄️',  color: '#10B981', bg: 'rgba(16,185,129,0.1)',   desc: 'Relational Database Service — managed SQL' },
+    { num: '06', name: 'Lambda',        file: '06_lambda.html',           icon: '⚡',  color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   desc: 'Serverless compute — run code without servers' },
+    { num: '07', name: 'CloudFront',    file: '07_cloudfront.html',       icon: '🚀',  color: '#06B6D4', bg: 'rgba(6,182,212,0.1)',    desc: 'CDN — global content delivery at edge' },
+    { num: '08', name: 'Route 53',      file: '08_route53.html',          icon: '📡',  color: '#84CC16', bg: 'rgba(132,204,22,0.1)',   desc: 'DNS — domain name system & routing' },
+    { num: '09', name: 'EKS',           file: '09_eks.html',              icon: '☸️',  color: '#3B82F6', bg: 'rgba(59,130,246,0.1)',   desc: 'Elastic Kubernetes Service — managed K8s' },
+    { num: '10', name: 'ECS',           file: '10_ecs.html',              icon: '🐳',  color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)',   desc: 'Elastic Container Service — managed containers' },
+    { num: '11', name: 'SNS',           file: '11_sns.html',              icon: '🔔',  color: '#F97316', bg: 'rgba(249,115,22,0.1)',   desc: 'Simple Notification Service — pub/sub messaging' },
+    { num: '12', name: 'SQS',           file: '12_sqs.html',              icon: '📬',  color: '#A78BFA', bg: 'rgba(167,139,250,0.1)',  desc: 'Simple Queue Service — message queuing' },
+    { num: '13', name: 'DynamoDB',      file: '13_dynamodb.html',         icon: '⚙️',  color: '#4ADE80', bg: 'rgba(74,222,128,0.1)',   desc: 'NoSQL key-value & document database' },
+    { num: '14', name: 'CloudWatch',    file: '14_cloudwatch.html',       icon: '📊',  color: '#FB923C', bg: 'rgba(251,146,60,0.1)',   desc: 'Monitoring & observability service' },
+    { num: '15', name: 'Auto Scaling',  file: '15_autoscaling.html',      icon: '📈',  color: '#34D399', bg: 'rgba(52,211,153,0.1)',   desc: 'Automatically scale EC2 capacity' },
+    { num: '16', name: 'Elastic Cache', file: '16_elasticcache.html',     icon: '🧠',  color: '#60A5FA', bg: 'rgba(96,165,250,0.1)',   desc: 'In-memory caching — Redis & Memcached' },
+    { num: '17', name: 'CodePipeline',  file: '17_codepipeline.html',     icon: '🔄',  color: '#E879F9', bg: 'rgba(232,121,249,0.1)',  desc: 'CI/CD — automated release pipelines' },
+    { num: '18', name: 'CloudFormation',file: '18_cloudformation.html',   icon: '🏗️',  color: '#FCD34D', bg: 'rgba(252,211,77,0.1)',   desc: 'Infrastructure as Code — template-based provisioning' },
+    { num: '19', name: 'Cognito',       file: '19_cognito.html',          icon: '👤',  color: '#F87171', bg: 'rgba(248,113,113,0.1)',  desc: 'User authentication & authorization' },
+    { num: '20', name: 'ELB',           file: '20_elb.html',              icon: '⚖️',  color: '#2DD4BF', bg: 'rgba(45,212,191,0.1)',   desc: 'Elastic Load Balancing — traffic distribution' },
+  ];
+
+  // ─── Auth guard ───
+  const storedUser = sessionStorage.getItem('kastro_user');
+  if (!storedUser) { window.location.href = 'index.html'; }
+  else { document.getElementById('user-email').textContent = storedUser; }
+
+  // ─── Progress tracking ───
+  function getCompleted() {
+    try { return JSON.parse(localStorage.getItem('kastro_completed') || '[]'); } catch { return []; }
+  }
+  function markCompleted(file) {
+    const c = getCompleted();
+    if (!c.includes(file)) { c.push(file); localStorage.setItem('kastro_completed', JSON.stringify(c)); }
+  }
+  function updateProgress() {
+    const c = getCompleted();
+    const pct = Math.round((c.length / SERVICES.length) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `${c.length} of ${SERVICES.length} completed`;
+    // Refresh card completed class
+    document.querySelectorAll('.service-card').forEach(card => {
+      const file = card.dataset.file;
+      if (c.includes(file)) card.classList.add('completed');
+      else card.classList.remove('completed');
+    });
+  }
+
+  // ─── Render cards ───
+  function renderCards(list) {
+    const grid = document.getElementById('services-grid');
+    const empty = document.getElementById('empty-state');
+    // Remove existing cards
+    grid.querySelectorAll('.service-card').forEach(c => c.remove());
+
+    if (list.length === 0) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    const completed = getCompleted();
+
+    list.forEach((svc, i) => {
+      const card = document.createElement('a');
+      card.className = 'service-card' + (completed.includes(svc.file) ? ' completed' : '');
+      card.href = svc.file;
+      card.dataset.file = svc.file;
+      card.style.animationDelay = (i * 0.045) + 's';
+      card.setAttribute('aria-label', svc.name + ' — ' + svc.desc);
+
+      // Track click as "viewed" (mark completed on open)
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        markCompleted(svc.file);
+        updateProgress();
+        // Push to history so Back returns to dashboard
+        history.pushState({ page: 'dashboard' }, '', 'dashboard.html');
+        window.location.href = svc.file;
+      });
+
+      card.innerHTML = `
+        <span class="card-number">${svc.num}</span>
+        <div class="icon-box" style="background:${svc.bg}; border: 1px solid ${svc.color}22;">${svc.icon}</div>
+        <div class="service-name">${svc.name}</div>
+        <div class="service-desc">${svc.desc}</div>
+        <div class="card-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      `;
+      grid.insertBefore(card, empty);
+    });
+
+    updateProgress();
+  }
+
+  // ─── Search / filter ───
+  function filterServices() {
+    const q = document.getElementById('search-input').value.trim().toLowerCase();
+    const filtered = SERVICES.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.desc.toLowerCase().includes(q)
+    );
+    renderCards(filtered);
+  }
+
+  // ─── Back button support ───
+  window.addEventListener('popstate', () => {
+    // When user presses Back from a service page, land here
+    renderCards(SERVICES);
+  });
+
+  // ─── Logout ───
+  function logout() {
+    sessionStorage.removeItem('kastro_user');
+    window.location.href = 'index.html';
+  }
+
+  // ─── Init ───
+  renderCards(SERVICES);
+</script>
+</body>
+</html>

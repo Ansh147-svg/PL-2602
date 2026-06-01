@@ -1,0 +1,37 @@
+version: '3'
+services:
+  main-service: #name of the service
+    build: ./main-service
+    container_name: kastro-main-service
+    ports: 
+      - "81:80"
+    restart: always
+
+  user-service: #name of the service
+    build: ./user-service
+    container_name: kastro-user-service
+    ports: 
+      - "82:80"
+    restart: always
+
+  cart-service: #name of the service
+    build: ./cart-service
+    container_name: kastro-cart-service
+    ports: 
+      - "83:80"
+    restart: always
+
+  order-service: #name of the service
+    build: ./order-service
+    container_name: kastro-order-service
+    ports: 
+      - "84:80"
+    restart: always
+
+  product-service: #name of the service
+    build: ./product-service
+    container_name: kastro-product-service
+    ports: 
+      - "85:80"
+    restart: always
+    

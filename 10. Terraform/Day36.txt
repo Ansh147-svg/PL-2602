@@ -1,0 +1,69 @@
+Day 33 | 26-05-2026 
+=====================================================
+=====================
+Module 8: Terraform
+=====================
+=> Multi region resource creation
+"alias"
+
+provider "aws" {
+	alias = "ap-south-1"
+	region = "ap-south-1"
+}
+
+provider "aws" {
+	alias = "us-east-1"
+	region = "us-east-1"
+}
+
+=> Terraform Drift
+Code ---- t2.micro 
+Manual update of the resource ---- t2.medium
+
+=> Terraform Refresh
+Code ---- t2.micro ---- state file (t2.micro)
+Manual update of the resource ---- t2.medium --- state file (t2.micro)
+Update the state file --- state file (t2.medium)
+
+=> Creation of VPC
+https://chatgpt.com/share/6a15b9ce-1fd4-8321-b77a-0ba74e546861
+
+=> Creation of Instances in the custom VPC
+https://chatgpt.com/share/6a15b9ce-1fd4-8321-b77a-0ba74e546861
+
+=> Terraform Taint
+Create VM with some userdata --- VM is not showing Nginx page --- taint
+terraform apply --- the tainted resource and it will recreate the resource
+
+=> Terraform Locals
+The variables which are declared directly in the main.tf file are known as terraform locals.
+We will write the info in the locals block
+
+=> Terraform Workspace
+dev-team.tfvars - state file
+test-team.tfvars - state file
+
+A workspace is an isolated environment where a separate state file is maintained for each team
+terraform.d
+terraform.tfstate
+terraform.tfstate.d
+
+=> State file can be stored in two locations
+local state
+remote state (AWS - S3 Bucket) ---- backend.tf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

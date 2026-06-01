@@ -1,0 +1,133 @@
+Day 34 | 28-05-2026 
+=====================================================
+=====================
+Module 8: Terraform
+=====================
+=> Terraform Provisioner
+Terraform can create resources in the cloud (AWS/GCP/Azure/IBM...)
+Terraform cannot directly install packages, copy files, run shell scripts, update the OS packages...
+
+Provisioners are used to run commands/scripts
+Provisioners are used to configure the infra
+Terraform is used to create the infra
+
+Types;
+file				copy the file
+remote-exec		run the command inside the server
+local-exec 		run the command from your laptop
+
+
+directory --- index.html -----> Copy the file to VM to the location /var/www/html
+
+=> Terraform Import & Terraformer
+When we have created the resources in the cloud in a manual way or by using cloud specific services such as Cloud Formation/ARM, if i want to track the resource information using terraform, we will use terraform import
+
+Terraform does not support importing multiple resources in a single command
+Each resource must be imported individually using the "terraform import" command
+To import multiple resources info, we will use TERRAFORMER
+Terraformer is helpful to import the resources based on specific service type in a specific region
+
+EC2 Service - 10 servers (Mumbai)
+EC2 Service - 5 servers (Sydney)
+
+Install terraformer
+https://chatgpt.com/share/6a18626c-61fc-8323-91f5-2d8f5a0bdb85
+
+=> Securing a statefile
+
+10.30 AM -----> terraform apply (EC2, VPC)
+11.00 AM -----> terraform apply (S3, IAM, RDS)
+
+10.35 AM ----> terraform apply ---- at 10.38 AM the resources are still creating --- lock the state file
+10.37 AM ----> terraform apply ---- statefile will get corrupted
+
+DynamoDB
+
+
+terraform {
+  backend "s3" {
+    bucket       = "s3-artificats-amazonprime"
+    key          = "prod/terraform.tfstate"
+    region       = "ap-south-1"
+    encrypt      = true
+    use_lockfile = true
+  }
+}
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "lock-instance" {
+  ami           = "ami-0685bcc683dadb6b9"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "backend-instance"
+  }
+}
+
+Earlier Terraform versions used:
+S3 bucket + DynamoDB table
+for state locking.
+Now Terraform introduced native S3 lockfile support, so you no longer need DynamoDB for state locking.
+
+
+=> Terraform Modules
+It maintains a directory structure for each resource that we are going to create
+
+EC2 Module		- main.tf, provider.tf, variables.tf, terraform.tfvars, output.tf
+S3 Module		- main.tf, provider.tf, variables.tf, terraform.tfvars, output.tf
+VPC Module	- main.tf, provider.tf, variables.tf, terraform.tfvars, output.tf
+RDS Module	- main.tf, provider.tf, variables.tf, terraform.tfvars, output.tf	
+IAM Module	- main.tf, provider.tf, variables.tf, terraform.tfvars, output.tf
+
+https://chatgpt.com/share/6a18626c-61fc-8323-91f5-2d8f5a0bdb85
+
+
+===========================================================================================================
+
+AWS Sessions will start from June 01, 2026 till June 30
+
+learnwithkastro@gmail.com
+
+
+
+Slack Video
+Project Intro Answer
+Probes & HELM Notes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
