@@ -1,0 +1,579 @@
+Contents;
+HELM
+Creating a Custom HELM Chart for Zomato App
+Argo CD - Deployments of Swiggy and Zomato Apps
+
+~~~~~~~~~
+HELM
+~~~~~~~~~
+It is a package manager for K8s
+It helps you define, install, and manage Kubernetes applications using Helm charts.
+Without Helm, deploying apps means writing multiple YAMLs (Deployment, Service, ConfigMap, Ingress, etc.) and applying them with kubectl.
+With Helm, all these manifests are bundled into a single chart, and you can deploy with one command:
+	helm install myapp ./mychart
+
+HELM package manager consists of charts.
+Chart is a collection of manifest files
+The helm charts are available in helm repository (just like how we have docker images in dockerhub) (artifacthub.io)
+
+📌 What are Helm Charts?
+A Helm chart is a collection of files that describe a Kubernetes resource set.
+Folder structure of a chart:
+mychart/
+├── Chart.yaml       # Metadata about chart (name, version, description)
+├── values.yaml      # Default configuration values
+├── charts/          # Dependencies (other charts)
+├── templates/       # Kubernetes YAML manifests (Deployment, Service, etc.)
+└── templates/_helpers.tpl # Helper template functions
+
+📌 What are Helm Repositories?
+A Helm repository is a location where packaged charts can be stored and shared.
+
+ARCHITECURE:
+HEML REPOSITORY: IT HAS AL HELM REPOS WHICH IS PUBLICALLY AVAILABLE
+HEML CLIENT: DOWNLOADS HELM CHARTS FORM HELM REPOS.
+API SERVER: DOWNLOADED HELM CHARTS WILL BE EXECUTED ON CLUSTER WITH API SERVER.
+
+📌 Helm Commands You Must Know
+helm repo add <name> <url>      	 # Add repo
+helm repo list                   		# List repos
+helm search repo <keyword>      	# Search charts in repo
+helm install <release> <chart>   	# Install chart
+helm list                        			# List installed releases
+helm upgrade <release> <chart>   # Upgrade release
+helm rollback <release> <rev>    # Rollback to revision
+helm uninstall <release>         		# Delete release
+helm template <chart>            		# Render templates to YAML
+
+Complete Helm flow
+K8s YAML → Helm Chart → Package (.tgz)
+             ↓
+          index.yaml
+             ↓
+        Helm Repository
+             ↓
+        helm install
+
+
+I’ll teach Helm to you from zero, exactly the way it’s expected in real projects and interviews, and then guide you step by step to:
+	Understand what Helm is
+	Learn all key Helm concepts & terms
+	Convert your Deployment + Service YAML into a custom Helm chart
+	Parameterize it using values.yaml
+	Test the chart locally
+	Push it to GitHub
+	Publish it as a Helm chart
+	Verify that the published chart works
+I’ll keep everything simple, structured, and practical.
+
+PART 1️⃣ — WHAT IS HELM (Conceptual Understanding)
+🔹 What problem Helm solves
+Before Helm:
+You manually apply YAML files
+Hardcoded values (image, replicas, ports)
+Environment-specific changes are painful
+Rollbacks are manual
+Versioning is messy
+
+Helm solves this by acting as:
+A package manager for Kubernetes
+Just like:
+apt for Ubuntu
+yum for RHEL
+npm for Node.js
+
+🔹 What Helm actually does
+Helm:
+Packages Kubernetes YAMLs
+Makes them reusable
+Allows templating
+Enables versioning
+Supports rollback
+Manages releases
+
+PART 2️⃣ — HELM KEY TERMS (VERY IMPORTANT)
+1️⃣ Chart
+A Helm chart is a folder containing Kubernetes manifests + templates.
+Chart = Kubernetes application package
+
+2️⃣ Release
+When you install a chart, Helm creates a release.
+helm install zomato-release zomato-chart
+
+zomato-release → Release name
+Same chart can be installed multiple times with different release names
+
+3️⃣ Repository
+A Helm repo is where charts are stored (like Docker Hub for images).
+Examples:
+Artifact Hub
+GitHub Pages
+S3 bucket
+
+4️⃣ values.yaml
+This file contains configurable values.
+values.yaml holds default values that Helm templates use.
+Typical sections include:
+Section					What it controls
+replicaCount				number of replicas
+image					image repo, tag, pull policy
+service					Service type and ports
+resources					CPU/memory limits & requests
+ingress					domain names & TLS
+autoscaling				HPA configuration
+env						app environment variables
+labels/annotations			metadata
+nodeSelectors, tolerations	scheduling rules
+
+Example:
+replicaCount: 3
+image:
+  repository: kastrov/zomato
+
+Chart.yaml = metadata about the chart
+values.yaml = configuration values used by templates
+
+5️⃣ Templates
+Templates are Kubernetes YAML files with placeholders.
+Example:
+replicas: {{ .Values.replicaCount }}
+
+6️⃣ Chart.yaml
+Chart.yaml is the metadata file for your Helm chart.
+Think of it like: book cover page
+Chart.yaml
+apiVersion: v2	#use v2 for Helm 3
+name: zomato-chart	#Name of the Helm chart package
+description: Helm chart for Zomato demo app
+type: application	#application or library chart
+version: 0.1.0	#chart version (Helm package version)
+appVersion: "1.0"	#application image version
+
+✅ 1) Application Chart
+type: application
+✔️ When to use an application chart
+Use it when the chart:
+deploys real Kubernetes resources
+creates pods, services, deployments, ingresses, etc.
+represents a runnable application
+
+🟦 2) Library Chart
+type: library
+Use it when you want to:
+share common template logic across multiple charts
+avoid repeating Kubernetes YAML snippets
+follow DRY (Don’t Repeat Yourself)
+
+Library charts:
+❌ cannot be installed
+❌ cannot create Kubernetes resources.
+
+7️⃣ Helm lifecycle
+install
+upgrade
+rollback
+uninstall
+
+PART 3️⃣ — HELM CHART STRUCTURE (MANDATORY)
+When you create a chart, Helm creates this structure:
+zomato-chart/
+├── Chart.yaml
+├── values.yaml
+├── templates/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── _helpers.tpl
+
+PART 4️⃣ — PREREQUISITES (What you need)
+✔ Kubernetes cluster
+✔ kubectl configured
+✔ GitHub account
+✔ Helm installed
+
+Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+✅ GitHub repository name (you create this)
+👉 Use this repo name: zomato-helm-chart
+
+
+PART 5️⃣ — CREATE A CUSTOM HELM CHART (STEP BY STEP)
+🧠 How to explain to students (simple narrative)
+You can say:
+We convert raw YAML → Helm chart
+Helm chart packaged app
+GitHub holds chart (version control)
+Helm installs to Kubernetes
+LoadBalancer exposes service externally
+
+
+✅ STEP-1 — Work on EC2
+Create a GitHub repo with EXACT NAME:
+zomato-helm-chart
+
+✅ STEP-2 — Clone the empty GitHub repo
+git clone https://github.com/<your-username>/zomato-helm-chart.git
+cd zomato-helm-chart
+
+✅ STEP-3 — Create Helm chart inside repo
+helm create zomato-chart
+ls ---> You will see "zomato-chart"
+cd zomato-chart
+ls -R
+
+You will see structure like:
+Chart.yaml
+values.yaml
+charts/
+templates/
+
+cd ..
+
+❌ STEP-4 — REMOVE UNUSED HELM FILES (IMPORTANT)
+We keep only deployment + service.
+We delete everything else to avoid errors.
+cd zomato-chart/templates
+rm -f serviceaccount.yaml hpa.yaml ingress.yaml NOTES.txt _helpers.tpl tests/test-connection.yaml
+OR
+Delete default templates:
+rm -rf zomato-chart/templates/*
+
+✅ STEP-5 — Edit values.yaml
+Open:
+vi /home/ubuntu/zomato-helm-chart/zomato-chart/values.yaml
+replicaCount: 2
+image:
+  repository: kastrov/zomato
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: LoadBalancer
+  port: 3000
+containerPort: 3000
+appLabel: zomato
+
+✅ STEP-6 — Write deployment.yaml (clean & correct)
+Open:
+vi /home/ubuntu/zomato-helm-chart/zomato-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment          # release-based name
+  labels:
+    app: {{ .Values.appLabel }}                 # app label from values.yaml
+spec:
+  replicas: {{ .Values.replicaCount }}          # number of pods
+  selector:
+    matchLabels:
+      app: {{ .Values.appLabel }}               # must match pod labels
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appLabel }}
+    spec:
+      containers:
+        - name: zomato-container
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"   # docker image
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}   # port inside container
+
+✅ STEP-7 — Write service.yaml (clean & correct)
+Open:
+vi /home/ubuntu/zomato-helm-chart/zomato-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-service              # release-based svc name
+  labels:
+    app: {{ .Values.appLabel }}
+spec:
+  type: {{ .Values.service.type }}               # LoadBalancer
+  selector:
+    app: {{ .Values.appLabel }}                  # maps to pods having same label
+  ports:
+    - port: {{ .Values.service.port }}           # service port
+      targetPort: {{ .Values.containerPort }}    # pod/container port
+
+✅ STEP-8 — Commit & push chart to GitHub
+Return to repo root
+cd /home/ubuntu/zomato-helm-chart
+git add .
+git commit -m "Added working Helm chart for Zomato app"
+git push origin main
+
+🎯 Your GitHub repo now contains the working chart.
+
+🔁 STEP-9 — CLEAN PROOF (use repo only)
+We will now pretend EC2 knows nothing.
+Delete local folder:
+cd /home/ubuntu
+rm -rf zomato-helm-chart
+
+Clone again:
+git clone https://github.com/<your-username>/zomato-helm-chart.git
+cd zomato-helm-chart
+
+This proves:
+✔️ repo is source of truth
+✔️ deployment comes from GitHub
+✔️ students understand “Git → Helm → Kubernetes”
+
+🚀 STEP-10 — Install Helm chart
+helm install zomato ./zomato-chart
+Part				Meaning
+helm			Helm CLI tool
+install			Action → install a new release
+zomato			release name (you choose this)
+./zomato-chart	path to the Helm chart directory
+
+🔍 STEP-11 — Verify deployment
+helm list
+kubectl get pods
+kubectl get svc
+
+🌐 STEP-12 — Access your Zomato app
+Open browser:
+http://LB-DNS
+
+If you uninstall:
+helm uninstall Zomato	["Zomato" is the release name]
+Helm deletes everything in the release automatically.
+
+Now, lets say you want to change the image version, replica count, how do we do it?
+You NEVER edit templates directly for changes.
+Instead, you change values.yaml.
+Open:
+nano zomato-chart/values.yaml
+Example — change image tag:
+image:
+  repository: kastrov/zomato
+  tag: v2
+
+Example — change replica count:
+replicaCount: 4
+Now apply changes:
+helm upgrade zomato ./zomato-chart
+
+Check changes:
+kubectl get pods
+You will see updated pods
+
+Now, lets say i want to add more manifests like configmaps, secrets, statefulset yamls, how can we do it?
+You simply add more template files under:
+zomato-chart/templates/
+
+Helm will automatically include them in the release.
+We will add examples for:
+ConfigMap
+Secret
+StatefulSet
+
+🟢 A) Add a ConfigMap
+Create file:
+nano zomato-chart/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  APP_NAME: "Zomato App"
+  APP_ENV: "production"
+
+Use inside Deployment:
+Add inside container spec:
+envFrom:
+  - configMapRef:
+      name: {{ .Release.Name }}-config
+
+🔐 B) Add a Secret
+nano zomato-chart/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-secret
+type: Opaque
+data:
+  DB_PASSWORD: dXNlcnBhc3M=     # base64 of "userpass"
+
+Use in Deployment:
+env:
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Release.Name }}-secret
+        key: DB_PASSWORD
+
+🟣 C) Add a StatefulSet (example for DB)
+Create:
+nano zomato-chart/templates/statefulset.yaml
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-db
+spec:
+  serviceName: "db-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.appLabel }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appLabel }}-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-secret
+              key: DB_PASSWORD
+
+Add headless service:
+nano zomato-chart/templates/db-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.appLabel }}-db
+  ports:
+  - port: 3306
+    targetPort: 3306
+
+🚀 Apply all new additions
+Just run:
+helm upgrade zomato ./zomato-chart
+Helm will:
+detect new files
+create new Kubernetes objects
+update changed objects
+keep same release name
+
+Check resources:
+kubectl get all
+
+Lets publish the chart to GitHub pages, so that it will become a real Helm repo.
+When we publish to GitHub Pages, the GitHub repo itself becomes a Helm repository.
+That means anyone can install our chart over the internet without cloning the repo.”
+
+cd zomato-helm-chart
+Package your chart
+helm package zomato-chart
+
+This creates:
+zomato-chart-0.1.0.tgz
+👉 This is the distributable chart file
+
+Create Helm repository index
+helm repo index .
+
+This generates:
+index.yaml
+This file maps chart name → tgz → versions
+
+Push to GitHub
+git add .
+git commit -m "Publishing Helm chart"
+git push origin main
+
+Enable GitHub Pages
+In GitHub UI:
+Go to repo → Settings
+Pages (Left pane)
+Build from → Deploy from a branch
+Branch → main
+Folder → / (root)
+Save
+
+GitHub Pages will give URL:
+https://<your-username>.github.io/zomato-helm-chart
+Reload the page to see the URL
+🎉 That URL is now a Helm chart repository
+
+🧪 Test from any Kubernetes machine
+helm repo add zomato https://<your-username>.github.io/zomato-helm-chart
+
+Update cache:
+helm repo update
+
+Search chart:
+helm search repo zomato
+
+Install:
+helm install zomato zomato/zomato-chart
+No cloning.
+No chart path.
+Pure Helm repository install.
+
+
+~~~~~~~~~~
+ArgoCD
+~~~~~~~~~~
+Generally we use Jenkins for continuous deployment. For k8s also, we need to do deploy the pods automatically. Lets say i have manifest files in GitHub, if i modify the manifest yml like instead of 5 replicas i will change to 10 as replica count. Since i have changed in GitHub, automatically those many should create, as per our understanding in Jenkins classes. But this wont happen, because for k8s, Jenkins is not the best option. For K8s, we have a separate deployment tool known as ArgoCD. Here Argo is the tool.
+This ArgoCD we will install using Helm.
+
+
+ArgoCD is a declarative, GitOps continuous delivery tool for Kubernetes. It automates the deployment of applications to Kubernetes clusters by syncing the desired state defined in Git repositories with the actual state in clusters.
+
+It’s part of the Argo Project (CNCF incubating project) which also includes Argo Workflows, Argo Events, Argo Rollouts.
+
+Pipeline is not the best method for k8s, prefer ArgoCD
+
+INTRO:
+ArgoCD is a declarative continuous delivery tool for Kubernetes. ArgoCD is the core component of Argo Project.
+It helps to automate the deployment and management of applications in a K8s cluster. It uses GitOps methodology to manage the application lifecycle and provides a simple and intuitive UI to monitor the application state, rollout changes, and rollbacks.
+With ArgoCD, you can define the desired state of your Kubernetes applications as YAML manifests and version control them in a Git repository.
+ArgoCD will continuously monitor the Git repository for changes and automatically apply them to the Kubernetes cluster.
+ArgoCD also provides advanced features like application health monitoring, automated drift detection, and support for multiple environments such as production, staging, and development.
+It is a popular tool among DevOps teams who want to streamline their Kubernetes application deployment process and ensure consistency and reliability in their infrastructure.
+
+Lets setup argocd using helm. We will then add the repos of argocd, and then we will install argocd. And when we install argocd, automatically load balancer will come up for the k8s. Using that we will access the argocd. And then we will do the deployment in argocd.
+
+Lets setup ArgoCD using HELM;
+------------------------------------------------
+Install HELM
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+Install ARGOCD using HELM
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+
+In production, it is always suggested to create a custom namespace ----> kubectl create namespace argocd ----> Lets install argocd in the namespace 'argocd' ----> helm install argocd argo/argo-cd --namespace argocd ----> kubectl get all -n argocd ----> You will see multiple things which are running ----> Under 'services' you can see 'argo-cd server' and the type as ClusterIP. But to access outside of the cluster, we need Load Balancer. So lets edit this ClusterIP to LoadBalancer ----> For this i will use patch ----> 
+
+EXPOSE ARGOCD SERVER:
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}' ----> kubectl get all -n argocd ----> Now you can see the service called 'argo-cd server' changed to Load Balancer instead of ClusterIP ----> Copy the load balancer url ----> This is one way of getting the loadbalancer url. Another way is to install "jq" (J Query) ----> 
+
+yum install jq -y
+
+kubectl get svc argocd-server -n argocd -o json | jq --raw-output '.status.loadBalancer.ingress[0].hostname'
+The above command will provide load balancer URL to access ARGO CD
+
+Access the argocd using teh above load balancer url ----> Username: admin, 
+
+TO GET ARGO CD PASSWORD:
+------------------------------------------
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+----> Copy the password and provide in argo cd console ----> You will see the argo cd console ----> Here is where we will do the k8s deployments ----> Click on 'New App' ----> App Name: swiggy-app, Project name: default, Sync policy: Automatic, Source - Repo URL: <Repo URL> ----> Revision: HEAD, Path: ./ ----> Cluster URL: Select the one from dropdown, Namespace: default (If you want to deploy the pods in custom namespace, create that namespace and provide here) ----> Create ----> Click on the 'swiggy-app' ----> You can see the details of pods ----> kubectl get svc ----> Copy the load balancer url and access the app in new tab of browser ----> Lets say you want to change the image name in repo, you can change. Automatically you will see the modified app ----> Goto repo, change the image name, replicas count ----> Based on this everything will get updated in argocd ----> Goto Argocd ----> Click on 'sync' and 'snchronize' ----> Automatically the new app will get deployed. Here we dint used Jenkins but still we were able to automate the deployment process. 
+
+export ARGO_PWD='kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
+echo $ARGO_PWD
+
+The above command to provide password to access argo cd
+
+//export ARGOCD_SERVER='kubectl get svc argocd-server -n argocd -o json | jq --raw-output '.status.loadBalancer.ingress[0].hostname''
+
+//echo $ARGOCD_SERVER
