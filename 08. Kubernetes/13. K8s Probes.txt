@@ -1,0 +1,613 @@
+-------------------------------------------------------------------
+Liveness and Readiness Probes
+-------------------------------------------------------------------
+📘 1. What Are Probes in Kubernetes?
+In Kubernetes, probes are checks performed by the kubelet on containers to determine their health and availability.
+
+🚀 Why Do We Need Probes in Kubernetes?
+In Kubernetes, you usually deploy applications as Pods. A Pod can be running from Kubernetes’ perspective, but the application inside may not actually be ready to serve traffic or may have crashed internally.
+For example:
+Your Pod is marked as “Running,” but the app inside hasn’t finished initializing. If Kubernetes sends traffic right away, users will see errors.
+Your app might be up but not healthy (e.g., database connection lost). Kubernetes needs to detect this and restart the Pod.
+Your app may need graceful shutdown before termination to complete existing requests.
+👉 This is why we use probes. They act like “health check doctors” for your containerized applications.
+
+In Kubernetes, probes are health checks that help the kubelet determine:
+	Liveness: Is the container running properly? (If not, restart it)
+	Readiness: Is the container ready to serve traffic? (If not, remove from service endpoints)
+
+There are 3 types of probes:
+
+Probe Type	What it checks					What happens if it fails?
+Liveness		Is the app still running (alive)?		Pod is restarted
+Readiness	Is the app ready to receive traffic?	Pod is removed from load balancer
+Startup		Has the app finished starting up?	Probes wait until startup is done
+
+A liveness probe answers the question: “Is this container still alive or stuck?” If the liveness probe fails repeatedly, Kubernetes assumes the container is in a bad state (deadlock, infinite loop, crash) and restarts the container automatically. This ensures self-healing behavior in your cluster without manual intervention.
+
+A readiness probe, on the other hand, answers: “Is this container ready to serve requests?” Even if the container is running, it might still be initializing (loading models, connecting to DB, warming cache). Until the readiness probe succeeds, Kubernetes will NOT send traffic to that Pod via Services. This prevents failed requests and improves reliability.
+
+👉 In short:
+Liveness = survival check → restart if failed
+Readiness = traffic control → remove from service if failed
+
+=> Liveness
+Checks if the application inside the container is alive or dead.
+If it fails → Kubernetes kills the container and restarts it.
+Example:
+Imagine a Java Spring Boot app got into a deadlock and stopped responding. Liveness probe detects this and restarts the Pod.
+
+=> Readiness
+Checks if the application is ready to accept traffic.
+If it fails → Pod is marked as Not Ready and removed from the Service’s endpoint list.
+Example:
+A Node.js app takes 30 seconds to initialize after container start. Without readiness probe, Kubernetes will start sending requests immediately → users get 500 errors.
+With readiness probe, traffic is sent only after app is actually ready.
+
+=> Startup
+Checks if the application has successfully started.
+Useful for slow-starting applications (like Java apps with large dependencies).
+Example:
+Your app takes 2 minutes to boot. If only liveness/readiness probes are configured, Kubernetes might restart it before it ever becomes ready.
+Startup probe ensures K8s waits until startup completes.
+
+📌 Explanation with Scenario
+Let’s take an e-commerce application running in K8s.
+You deploy a Pod with your app.
+Kubernetes marks it Running, but internally:
+The app needs 30s to initialize database connections.
+The app sometimes hangs due to a memory leak.
+During shutdown, the app needs 10s to save orders before quitting.
+
+👉 Without probes:
+Traffic comes before app is ready → customers see errors.
+Hung app keeps serving errors, and Kubernetes doesn’t restart it.
+Shutdown kills orders in progress → data loss.
+
+👉 With probes:
+Readiness Probe delays traffic until DB connections are ready.
+Liveness Probe restarts hung app automatically.
+Startup Probe handles slow boot times.
+Termination Grace Period (tem) ensures app gracefully shuts down, saving orders.
+
+🛑 TEM (Termination in Kubernetes)
+When you delete a Pod (or during rolling updates), Kubernetes doesn’t instantly kill it. Instead, it gives the app time to gracefully shut down. This is called Termination Grace Period (default: 30 seconds).
+
+Steps:
+Kubernetes sends a SIGTERM signal to the container.
+The app should catch this signal and clean up (close DB, save files, finish requests).
+If the app doesn’t exit within the grace period → Kubernetes sends SIGKILL (force kill).
+
+Example Scenario:
+Suppose your app is processing a payment.
+If K8s just kills the Pod → payment may be lost.
+
+With termination:
+	Pod gets SIGTERM → app completes the payment → then shuts down safely.
+	Users never lose data.
+
+✅ Summary
+Need for Probes: Ensure app health, avoid sending traffic to unready apps, recover from crashes automatically.
+
+Types:
+Liveness → checks if app is alive.
+Readiness → checks if app is ready to serve.
+Startup → checks if app startup is complete.
+TEM (Termination): Graceful shutdown mechanism to avoid request/data loss.
+
+
+Startup Probe (used less commonly): Helps when the container needs more time to start. Prevents liveness checks from killing a slow-starting container.
+
+Readiness Probes (RP):
+Do not restart a failing pod; they just stop sending traffic to it.
+This ensures that transient issues (e.g., high load or temporary database unavailability) do not unnecessarily trigger a restart.
+Pods can continue running and recover without interruption.
+
+Liveness Probes (LP):
+Designed for critical, irrecoverable issues where a restart is the only solution.
+Ensures that dead or hung pods are recreated, preserving application availability.
+
+Key Insight:
+Without RP: Traffic may still be sent to pods experiencing temporary failures, degrading user experience.
+Without LP: Pods stuck in fatal states will remain idle and waste resources.
+
+=> Probe Timer Configuration Parameters
+Every probe has these parameters:
+initialDelaySeconds → Time to wait after container starts before first check.
+periodSeconds → How often to check.
+timeoutSeconds → Max time to wait for response before marking failed.
+successThreshold → How many successes in a row mark it healthy.
+failureThreshold → How many failures in a row before marking unhealthy.
+
+=> Scenarios of Pod Failing & How Probes Help
+Startup takes longer than expected
+Without readiness probe → Traffic routed too early → Errors.
+With readiness probe → Traffic routed only when ready.
+
+Application process hangs
+Without liveness probe → Pod stays in Running state but unresponsive.
+With liveness probe → Pod restarted automatically.
+
+Misconfigured App (bad config, failing health endpoint)
+Without readiness probe → Traffic still sent to broken pod.
+With readiness probe → Pod marked NotReady, excluded from Service.
+
+Key Differences
+Feature			Liveness Probe			Readiness Probe
+Purpose			Detect deadlocks/crashes		Detect temporary unavailability
+Action on Failure	Restarts container			Removes pod from service endpoints
+When to Use		For critical failures			For temporary overloads or startup delays
+
+🔍 2. Why Are They Used?
+Without Probes:
+Kubernetes only checks if your container is running.
+It does not know if your app inside the container is healthy or responding properly.
+
+With Probes:
+You gain fine-grained control over how and when Kubernetes decides to:
+Restart a container.
+Remove a pod from the service endpoints.
+Start routing traffic only after your app is fully initialized.
+
+🎯 3. Real-Time Scenarios
+Scenario															Use
+An API server starts but needs 20 seconds to initialize					Use readinessProbe to delay traffic routing
+A database client gets stuck due to deadlock							Use livenessProbe to restart it
+A Node.js app starts slowly, and livenessProbe keeps killing it early		Use startupProbe for grace period
+Your Spring Boot app needs to perform DB connection before it's usable	readinessProbe helps exclude it from load balancer until ready
+
+🧠 Objective
+Deploy NGINX in Kubernetes with:
+Readiness Probe → simulate startup delay before serving traffic
+Liveness Probe → simulate a broken state and force pod restart
+
+Understand:
+What each probe does
+When and why it triggers
+What happens when the pod fails or becomes ready
+Clear command explanations with output expectations
+
+Readiness Probe Demo; (This is from varjosh)
+rp.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-probe-demo
+spec:
+  containers:
+  - name: busybox-app
+    image: busybox
+    command: ["sh", "-c", "touch /tmp/ready; sleep 3600"] # Create /tmp/ready file and keep container alive for 1 hour
+    readinessProbe:
+      exec:                       # Executes a command inside the container
+        command:
+        - cat
+        - /tmp/ready               # Checks if /tmp/ready file exists; probe succeeds if file exists
+      initialDelaySeconds: 5       # Waits 5 seconds before starting the first probe
+      periodSeconds: 5          
+      failureThreshold: 1        #Even if there is 1 failure, it will mark the probe as failed
+
+kubectl get pods ----> kubectl describe pods <Pod-Name> ----> kubectl get pods <Pod-Name> -o yaml [To see the yml output of running pod] ----> You can see the timers ----> Lets simulate the failure, so that the container will not be in ready state ----> 
+kubectl exec -it <Pod-Name> -- /bin/sh ----> ls /tmp ---> You can see a file called 'ready' which is created using the above yml ----> Lets delete it ----> rm /tmp/ready ----> exit ----> kubectl get pods ----> You will see 0/1. We have given "failureThreshold: 1" so probe failed. Lets see it more detailed ----> kubectl describe pod <Pod-Name> ----> You will see "Readiness Probe Failed" because there is no such file called ready in /tmp (we have deleted it sometime back) ----> kubectl exec -it <Pod-Name> -- /bin/sh ----> touch /tmp/ready ----> exit ----> kubectl get pods ----> You will see 1/1.
+
+📁 YAML File: nginx-liveness-readiness.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-probe
+  labels:
+    app: nginx-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-probe
+  template:
+    metadata:
+      labels:
+        app: nginx-probe
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest  # Official nginx image
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /index.html    # Probe will hit this path
+            port: 80
+          initialDelaySeconds: 5  # Wait before first check
+          periodSeconds: 5        # Repeat every 5 seconds
+        livenessProbe:
+          httpGet:
+            path: /index.html    # If this fails, restart container
+            port: 80
+          initialDelaySeconds: 15 # Give time before checking liveness
+          periodSeconds: 10       # Repeat every 10 seconds
+
+🔧 STEP-BY-STEP DEPLOYMENT + EXPLANATION
+✅ 1. Deploy the App
+kubectl apply -f nginx-liveness-readiness.yaml
+⏳ What happens:
+Pod starts
+Readiness probe starts checking /index.html after 5 seconds
+If it passes → pod becomes READY
+Liveness probe starts after 15 seconds and checks health every 10 seconds
+
+✅ 2. Verify Pod Status
+kubectl get pods -l app=nginx-probe -w
+👀 You’ll see:
+nginx-probe-xxxxx   0/1   Running   0     5s   ← Not ready yet (readiness probe)
+nginx-probe-xxxxx   1/1   Running   0     20s  ← Ready (probe passed)
+
+✅ 3. Access NGINX in Pod
+kubectl exec -it deploy/nginx-probe -- bash
+
+Inside the pod:
+ls /usr/share/nginx/html
+cat /usr/share/nginx/html/index.html
+exit
+
+✅ 4. Simulate Liveness Failure
+We’ll break /index.html so liveness probe fails:
+kubectl exec -it deploy/nginx-probe -- bash
+rm /usr/share/nginx/html/index.html
+exit
+
+✅ 5. Observe Restart (Liveness Probe)
+kubectl get pods -l app=nginx-probe -w
+👀 Output (after ~30 sec):
+RESTARTS column increases
+Pod will terminate and restart automatically
+Liveness probe fails → container restarts
+
+✅ 6. Check Restart Events
+kubectl describe pod $(kubectl get pod -l app=nginx-probe -o name)
+
+🔍 Under Events, you’ll see:
+Readiness probe failed initially (before ready)
+Liveness probe failed and Killing container...
+
+✅ 7. Fix Readiness Again
+After restart, file is back (since NGINX image restores it), so probe will pass.
+
+kubectl exec -it deploy/nginx-probe -- ls /usr/share/nginx/html
+
+📊 Probe Summary Table
+Probe		Configures		What It Checks				Result If Fails
+Readiness	readinessProbe	App is ready to serve traffic		Pod is not added to Service endpoints
+Liveness		livenessProbe		App is healthy/alive			Pod is restarted by K8s
+
+🧠 Important Concepts
+Services route only to ready pods
+Liveness does not affect routing, only restarts
+
+🧹 Cleanup
+kubectl delete -f nginx-liveness-readiness.yaml
+
+----------------------------------------------------------------
+EXAMPLE 2
+🎯 Final Objective
+You will:
+Deploy NGINX Deployment with 3 replicas
+Use both Readiness and Liveness Probes
+Expose app with a LoadBalancer Service
+
+Test behavior using:
+Simulated delay (Readiness Probe)
+Simulated failure (Liveness Probe)
+
+Understand:
+How K8s handles unhealthy pods
+How LoadBalancer routes only to “ready” pods
+When a container is restarted
+
+🧠 Key Concepts Refresher
+Probe Type		Purpose
+Readiness Probe	Decides whether the pod is ready to accept traffic. If it fails, the pod stays alive but is removed from the Service load balancer.
+Liveness Probe	Checks if the container is alive. If it fails, Kubernetes restarts the container.
+
+🔧 Scenario Setup Overview
+Component	Purpose
+NGINX		App container with /index.html
+3 Replicas	Simulates a real Load Balanced deployment
+LoadBalancer	Routes external traffic to healthy pods
+Probes		Simulate startup delay and failures
+
+📁 YAML File: nginx-lb-probes.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-probe-lb
+  labels:
+    app: nginx-lb
+spec:
+  replicas: 3  # Create 3 replicas for Load Balancing
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /index.html  # If this path doesn't respond, pod is not 'ready'
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /index.html  # If this path fails continuously, restart container
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb-service
+spec:
+  type: LoadBalancer  # Expose the app to internet
+  selector:
+    app: nginx-lb
+  ports:
+    - port: 80
+      targetPort: 80
+
+✅ Step-by-Step Deployment and Analysis
+🧭 Step 1: Apply the YAML
+kubectl apply -f nginx-lb-probes.yaml
+
+⏳ This will:
+Launch 3 pods named like nginx-probe-lb-xxxxx
+Expose the app using an AWS Elastic Load Balancer
+Set both probes for /index.html
+
+🔍 Step 2: Watch Pod Status
+kubectl get pods -l app=nginx-lb -w
+
+You will see:
+Pods go from 0/1 → 1/1 as readiness probe passes
+After ~15 sec, liveness probe becomes active
+If any pod fails liveness, it will restart
+
+🌐 Step 3: Get External LoadBalancer URL
+kubectl get svc nginx-lb-service
+
+Example output:
+nginx-lb-service   LoadBalancer   <external-IP>   80:xxxxx/TCP
+
+Open the external IP in your browser:
+http://<external-IP>
+You’ll see NGINX default welcome page.
+It's being served from one of the 3 replicas.
+
+🔄 Step 4: Simulate Pod Failure (Liveness)
+Let’s break a pod so the liveness probe fails and it gets restarted.
+Find the pod:
+kubectl get pods -l app=nginx-lb
+
+Pick one (e.g., nginx-probe-lb-xxxxxx) and exec into it:
+kubectl exec -it <pod-name> -- bash
+
+Inside the pod:
+rm /usr/share/nginx/html/index.html
+exit
+
+Now, K8s will:
+Run the liveness probe every 10 seconds
+Fail to get /index.html
+Restart the container
+
+kubectl describe pod <Pod-Name> ----> To see the events
+
+Monitor with:
+kubectl get pods -l app=nginx-lb -w
+
+🎯 You’ll see RESTARTS increase.
+
+❌ Step 5: Simulate Readiness Failure
+Let’s simulate a pod that is running but not ready:
+kubectl exec -it <pod-name> -- bash
+mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index.bak
+exit
+
+Now:
+Liveness probe still passes (container stays alive)
+Readiness probe fails → pod is removed from LoadBalancer rotation
+Traffic won’t be sent to this pod
+
+Check:
+kubectl describe endpoints nginx-lb-service
+
+👀 Output will show only 2 endpoints, not 3.
+
+🧪 Step 6: Restore Pod Readiness
+kubectl exec -it <pod-name> -- bash
+mv /usr/share/nginx/html/index.bak /usr/share/nginx/html/index.html
+exit
+
+Check again:
+kubectl describe endpoints nginx-lb-service
+
+✅ Pod is back in rotation.
+
+# Check which pods are in endpoints (only Ready pods appear here)
+kubectl get endpoints nginx-lb-service -o yaml
+
+# View pod restart count
+kubectl get pods -l app=nginx-lb -o wide
+
+# View probe failure events
+kubectl describe pod <pod-name>
+
+kubectl delete -f nginx-lb-probes.yaml
+
+-----------------------------------
+EXAMPLE 3:
+
+Chat GPT Demos (TESTED SUCCESSFULLY)
+
+🔹 Demo 1: Liveness Probe
+📌 Goal: Pod starts normally, then we break it so the liveness probe fails → Kubernetes restarts the container.
+nginx-liveness.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-liveness-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-liveness
+  template:
+    metadata:
+      labels:
+        app: nginx-liveness
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 2
+
+kubectl apply -f nginx-liveness.yaml
+kubectl get pods -w
+kubectl get pods -o wide
+
+Break NGINX (simulate failure):
+kubectl exec -it <pod-name> -- /bin/bash
+rm -f /etc/nginx/conf.d/default.conf
+nginx -s reload
+
+kubectl describe pod <pod-name>
+You’ll see Liveness probe failed and pod restarts.
+
+Verify restart:
+kubectl get pods
+kubectl logs <pod-name> --previous
+
+Outcome: Liveness probe detects unresponsive NGINX and restarts the pod.
+
+🔹 Demo 2: Readiness Probe
+📌 Goal: Pod is running, but readiness probe fails, so Kubernetes stops routing traffic to it (but doesn’t restart).
+
+nginx-readiness.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-readiness-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-readiness
+  template:
+    metadata:
+      labels:
+        app: nginx-readiness
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 2
+
+kubectl apply -f nginx-readiness.yaml
+kubectl get pods -w
+kubectl get pods
+
+Break NGINX config:
+kubectl exec -it <pod-name> -- /bin/bash
+rm -f /etc/nginx/conf.d/default.conf
+nginx -s reload
+
+kubectl describe pod <pod-name>
+You’ll see Readiness probe failed. Pod is Running (0/1 Ready).
+
+Test Service (traffic not routed):
+kubectl expose deployment nginx-readiness-demo --type=ClusterIP --port=80
+kubectl run busybox --rm -it --image=busybox -- wget -qO- http://nginx-readiness-demo
+👉 It won’t return NGINX page because readiness failed.
+
+✅ Outcome: Pod is alive but not receiving traffic → useful when app is broken but shouldn’t be killed.
+
+🔹 Demo 3: Both Readiness & Liveness
+📌 Goal: Pod must be ready before serving traffic and should restart automatically if it hangs.
+
+nginx-both.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-both-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-both
+  template:
+    metadata:
+      labels:
+        app: nginx-both
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+
+kubectl apply -f nginx-both.yaml
+kubectl get pods -w
+kubectl get pods
+
+Break NGINX:
+kubectl exec -it <pod-name> -- /bin/bash
+rm -f /etc/nginx/conf.d/default.conf
+nginx -s reload
+
+Watch behavior:
+First → Readiness probe failed (pod stays Running but 0/1 Ready).
+Later → Liveness probe failed (pod restarts automatically).
+
+✅ Outcome: Pod first stops receiving traffic (readiness) → then Kubernetes restarts it (liveness).
+
+Note: Always use readinessProbe in production
+
