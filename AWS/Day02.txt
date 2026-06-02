@@ -1,0 +1,74 @@
+AWS Module - Day 02
+============================
+=> Service 1: S3
+
+S3 - Simple Storage Service
+S3 is one of the storage services available in AWS Cloud
+S3 is the second service released in AWS (SQS was launched as first service in 2004)
+S3 supports unlimited amount of data storage
+For free tier accounts we can storage 5GB of data
+
+S3 Buckets - Bucket is nothing but a folder/directory
+S3 Objects - Anything that is stored inside the bucket, is termed as Object
+For every object that is uploaded to the S3 bucket will have an unique object URL
+Using the object URL we can access the data
+
+All the buckets and objects inside the bucket are private
+
+The bucket names must be globally unique
+S3 service is a global service, but the buckets created in S3 are regional
+
+S3 features;
+Scalability		- there is no storage limit (0 bytes to Peta Bytes)
+Availability		- at any given time the data is accessible - AWS Stores the copies of an object, based on the AZs that are there in a specific region
+Latency			- how fast the data is accessible
+
+Each individual object can be up to 50 TB in size
+10,000 general purpose buckets per AWS account (not per region)
+
+Types of Buckets;
+General Purpose Buckets*	- any data that is stored in this type of bucket will have the copies of the same objects in all the AZs in that region
+Directory Buckets			- any data that is stored in this type of bucket will have the copy only in one AZ
+
+ACLs disabled (recommended)
+Block Public Access settings 
+
+Presigned URLs - giving access for specific time
+
+Upload/Download of Objects
+
+Deletion of Objects and Buckets
+
+Types of Websites;
+Static Website		- the website doesn't have dynamic content - E-paper website
+Dynamic Website		- the content gets changed based on the geographical location, previous search history
+
+Static Website Hosting
+
+S3 Versioning
+Version1 -----> This is Version1 (June 2, 2026, 21:31:06 (UTC+05:30))
+Version1	-----> This is Version2 (June 2, 2026, 21:32:41 (UTC+05:30))
+
+When the versioning for a bucket is disabled, by default the files which are uploaded with the same name will be overwritten
+When you want to store multiple versions of the same file, then enable Versioning for the Bucket
+
+Note: By default the versioning is disabled for a bucket
+
+After enabling versioning for a bucket, if there are any files that were uploaded previously, for all such objects the version ID will be NULL
+
+Version1.txt		null 										June 2, 2026, 21:32:41 (UTC+05:30)		-------> This is Version2
+Version1.txt		k7HBabfUEKu3qiJx5YKoanlTlvH7Ejy3		June 2, 2026, 21:40:51 (UTC+05:30)		-------> This is Version3
+Version1.txt		NjtpOW4sIyXIfHTrIRK5eRKpKkFjfZ_x		June 2, 2026, 21:42:59 (UTC+05:30)		-------> This is Version4
+
+Version1.txt		Delete marker		laAelCGLEu.ACcVZeZwHjupdR_NZ0gj4	June 2, 2026, 21:45:14 (UTC+05:30)
+
+Recovering a delete marker file
+
+Task:https://youtu.be/TvkyDfJrh6A?si=rAyqCgeGLUx8G7gM (S3 Storage Classes)
+
+
+
+
+
+
+
