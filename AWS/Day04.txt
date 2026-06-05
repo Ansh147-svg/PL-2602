@@ -1,0 +1,130 @@
+AWS Module - Day 04
+============================
+Instance Families
+Instance Types
+
+EC2 is a region specific service
+Mumbai		- Mumbai-Server
+N.Virginia	
+
+1. Name of VM
+2. AMI - Amazon Machine Image (OS)	- Linux (ec2-user), Ubuntu (ubuntu)
+3. Instance Type
+4. Key-pair (.pem, .ppk)
+	.pem	- MobaXTerm
+	.ppk		- PuTTY
+5. Networking (VPC)
+6. Storage (EBS Volumes)
+
+
+Public IP ---- Dynamic IP	---- When you stop and restart an instance, the Public IP will change
+
+Open port number 22 in the SG of instance
+SSH - Secure Socket Host (Secure Shell)
+
+Public IPv4 address
+3.7.46.105 
+
+Public IPv4 address
+65.1.95.74
+
+Private IPv4 addresses
+172.31.7.81
+
+Private IPv4 addresses
+172.31.7.81
+
+=> Elastic IP
+Costly
+
+Public IPv4 address
+13.204.127.241
+
+=> Stop Protection & Termination Protection
+
+=> EC2 Instance Connect Options
+EC2 Instance Connect
+
+=> AMI
+Amazon Machine Image
+Creation of AMI
+Creation of VM using AMI
+Sharing of AMIs
+
+=> Change the instance type
+
+=> EBS
+Elastic Block Storage
+
+It defines the storage for the VM
+Root Volume - default volume which will come to the VM
+Any additional volumes that are attached to the instance, those are called as EBS Volumes
+
+Volume Types;
+
+Note: The EBS Volume and EC2 Instance should be there in the same AZ, only then we can attach the EBS Volume to the VM
+
+Updating the EBS Size
+Updating the EBS Type
+
+EBS Multi-Attach
+Multi attach is supported only io1 and io2 volume types
+
+Enable delete on termination for Volume
+
+Snapshot - backup of Volume
+Incremental backup
+10.00 AM - backup1 - git, maven
+	(Jenkins, docker)
+11.00 AM - backup2 - Jenkins, docker
+
+Creation of snapshot
+Creation of volume from snapshot
+Creation of AMI from the volume created using snapshot
+
+Snapshot Lifecycle Manager
+
+
+learnwithkastro@gmail.com
+
+
+
+
+3-Tier DevOps Project Explanation
+In my recent project, I worked as a DevOps Engineer for a 3-tier web application hosted on AWS. The application mainly consisted of a frontend, backend, and database layer. The frontend was developed using ReactJS, backend services were built using Spring Boot, and for the database we used MySQL hosted on RDS. My major responsibility in the project was to automate the infrastructure provisioning, CI/CD process, containerization, Kubernetes deployment, and monitoring.
+
+We followed a secure AWS architecture where we created a custom VPC with both public and private subnets. The Application Load Balancer was placed in the public subnet to receive internet traffic, whereas application servers and databases were deployed in private subnets for security reasons. Infrastructure provisioning was completely automated using Terraform, where we created reusable modules for VPC, EC2, EKS, IAM, Security Groups, and RDS, which helped us maintain consistency across dev, QA, and production environments.
+
+For source code management, developers used GitHub with branching strategies like feature, develop, and main branches. Whenever developers pushed code into GitHub, Jenkins pipelines were automatically triggered through webhooks. The pipeline first checked out the source code, then Maven was used to build the application and generate artifacts. After the build, we integrated SonarQube for code quality analysis to identify bugs, vulnerabilities, and code smells. Once the quality gate passed, we containerized the application using Docker and performed image scanning using Trivy to identify security vulnerabilities.
+
+After successful scanning, Docker images were pushed into ECR, and deployment was handled through Kubernetes running on EKS. We used Kubernetes manifests and Helm charts for deployments, services, ingress, ConfigMaps, and Secrets management. We implemented rolling deployment strategies to ensure zero downtime during production releases. For scaling, HPA was configured based on CPU and memory utilization.
+
+On the monitoring side, we implemented Prometheus and Grafana to monitor cluster performance, pod health, CPU, memory usage, and application metrics. For centralized logging, we used the ELK stack to analyze logs whenever production issues occurred. We also implemented IAM role-based access, SSL certificates, and Kubernetes Secrets for security.
+
+One major challenge we faced was deployment downtime during releases and manual rollback complexity. To solve this, we implemented rolling updates and health probes in Kubernetes, which significantly reduced downtime. Overall, the project helped improve deployment speed, reduced manual intervention, and increased application availability.
+
+
+
+Microservices DevOps Project Explanation
+In my recent project, I worked as a DevOps Engineer for a cloud-native microservices-based e-commerce application deployed on AWS. Unlike monolithic architecture, this application was broken down into multiple independent services such as User Service, Product Service, Payment Service, Order Service, and Notification Service, where each service had its own deployment lifecycle and database. My role was mainly focused on infrastructure automation, CI/CD implementation, Kubernetes management, containerization, monitoring, and production deployment support.
+
+We provisioned the complete infrastructure using Terraform, where resources like VPC, EKS cluster, IAM roles, Load Balancers, Route53, and Security Groups were automated. Terraform remote backend was configured using S3 and DynamoDB state locking to maintain consistency and avoid conflicts during infrastructure provisioning.
+
+Developers maintained source code in GitHub repositories, and whenever code changes were pushed, Jenkins pipelines were triggered automatically. The pipeline started with code checkout, followed by Maven build and unit testing. Then SonarQube was used for static code analysis to ensure code quality standards. After successful validation, we created Docker images for each microservice and scanned them using Trivy for vulnerabilities before pushing them into ECR.
+
+Since it was a microservices architecture, each service had its own Dockerfile and independent deployment process. Deployments were handled through Kubernetes on EKS, where we used namespaces, deployments, services, ingress controllers, ConfigMaps, Secrets, and Horizontal Pod Autoscalers. For deployment strategy, we mainly followed rolling updates to achieve zero downtime during releases. Service-to-service communication happened through REST APIs, and for asynchronous communication between services, Kafka was used, especially between order, payment, and notification services.
+
+For monitoring and observability, we implemented Prometheus and Grafana dashboards to monitor cluster metrics and application performance. We also integrated CloudWatch for infrastructure logs and Jaeger for distributed tracing to troubleshoot inter-service communication issues. Security was handled through IAM roles, Kubernetes RBAC, TLS encryption, image scanning, and Secrets management.
+
+One of the major challenges in the project was troubleshooting failures across multiple services because identifying the root cause was difficult in distributed systems. To overcome this, we implemented centralized logging and distributed tracing, which significantly reduced debugging time. Overall, the microservices architecture improved scalability, independent deployments, and faster release cycles without affecting the entire application.”
+
+
+
+
+
+
+
+
+
+how sso integrate with ami
+

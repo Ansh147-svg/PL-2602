@@ -1,0 +1,74 @@
+AWS Module - Day 03
+============================
+=> Service 1: S3
+
+=> Replication Setup
+
+=> Transfer Acceleration
+
+=> S3 Storage Class
+
+=> S3 Life Cycle Management
+100 files/day		-----> Standard (10rs / file / month )
+
+1st 3 months		--- FA				--- Standard		- 10 rs / file / month	
+2nd 3 months		--- IA				--- Standard IA	- 7 rs / file /month
+3rd 3 months		--- IA (once in a year)	--- Glacier		- 3 rs / file / month
+on 10th month, i want the files to be deleted
+
+Transition of files can only happen from top to bottom not from bottom to top 
+
+=> Working with AWS CLI
+Using AWS CLI we can create the resources in the AWS Cloud using commands
+
+Install AWS CLI Tool
+Configure AWS Account - IAM User - Generate Access Key and Secret Access Key
+
+=> S3 Server access logging
+
+=> Object Lock
+
+=> Requester pays
+
+Account 1 Files ------> Account 2
+
+===========================
+Service 2: EC2
+
+Elastic Compute Cloud
+Virtual Machines
+
+Using EC2 we can create VMs
+
+Instance Families
+Instance Types
+
+https://aws.amazon.com/ec2/instance-types/general-purpose/
+
+AMI is OS for the VM
+Amazon Linux**
+Ubuntu**
+RedHat**
+Suse
+Fedora
+Windows
+MacOS
+
+
+Tomorrow
+storage lens
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
