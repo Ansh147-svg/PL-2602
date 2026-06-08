@@ -1,0 +1,102 @@
+AWS Module - Day 05
+============================
+=> Launching VM using userdata
+
+#!/bin/bash
+
+# Update packages
+dnf update -y
+
+# Install nginx
+dnf install nginx -y
+
+# Start and enable nginx
+systemctl start nginx
+systemctl enable nginx
+
+# Create custom HTML page
+cat > /usr/share/nginx/html/index.html <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AWS Cloud</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding-top: 100px;
+        }
+        h1 {
+            color: orange;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to AWS Cloud</h1>
+    <p>Nginx is running successfully on EC2</p>
+    <p>Learn AWS Cloud with KASTRO</p>
+</body>
+</html>
+EOF
+
+# Restart nginx
+systemctl restart nginx
+
+
+=> Load Balancer
+Load Balancer is used to distribute the traffic equally to all the VMs
+
+Types of LBs;
+ALB	- serve the app
+NLB	- security level
+GLB	- security level
+
+Create 2 VMs with different userdata
+Create TG 
+Create ALB
+
+=> Autoscaling Group
+Based on the load/traffic that is coming to the app, the capacity of the servers might not be sufficient enough to handle the complete traffic. In that case, i want automatically more instances to launch.
+And, once the traffic is less, i want the instances to automatically terminate
+
+We will configure the traffic based on the CPU Usage metric
+
+Types;
+Horizontal Autoscaling
+
+Vertical Autoscaling
+
+=> SNS - Simple Notification Service
+Email Notification
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
