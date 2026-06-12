@@ -1,0 +1,57 @@
+AWS Module - Day 06
+============================
+=> Sessions Manager
+It is used to connect to the VM without opening port number 22 and keypair
+
+Policy: AmazonSSMManagedInstanceCore
+
+=> SSH Client
+
+=> IAM - Identity and Access Management
+IAM is a global service
+
+Root User
+IAM User
+
+Fresher				- S3
+Experience (5 years)	- S3, EC2, RDS, VPC
+
+Authentication	- who can login to my account
+Authorization	- what they can do in my account
+
+IAM Users
+IAM Roles
+IAM Policies
+IAM Groups
+
+Identity Centre
+
+Policy Types;
+AWS Managed Policies		- pre-defined by AWS with permissions
+Customer Managed Policies		- in-line policy
+
+IAM Role - are short lived
+EKS Client VM ----> IAM Role with Permissions Attached
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
