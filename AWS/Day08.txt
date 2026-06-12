@@ -1,0 +1,75 @@
+AWS Module - Day 08
+============================
+=> Route 53
+
+Route 53 is a DNS service in AWS
+DNS - Domain Name System
+53 is the port number
+
+Hosted Zone
+Public HZ	- websites which are available on the internet
+Private HZ	- with in a network, if websites are accessible
+
+Using Route 53 we can purchase domain
+1 year of validity
+
+Route 53 Record Types;
+A Record		--- IP -----> Domain Name OR Domain Name ----> IP (IPv4)
+AAAA Record	--- IP -----> Domain Name OR Domain Name ----> IP (IPv6)
+CNAME Record --- alias names for a website ---- www.facebook.com, www.fb.com, fb.com, fb
+TXT Record --- to prove the domain is ours
+
+Routing Policies
+5 types
+Simple RP
+Fail over RP
+Geolocation RP
+Latency based RP
+Weighted RP
+Multi value RP
+
+Note: When a domain is purchased, by default we will two records, NS Record and SOA Record
+
+http://geolocation.learndevops01.click/
+
+
+=> AWS Certificate Manager
+It is used to deliver our applications in a secure way
+
+=> EFS - Elastic File System
+EFS works on NFS protocol (2049)
+sudo dnf install -y amazon-efs-utils
+
+sudo mount -t efs -o tls fs-0e3c02f45d8f1bfb5:/ var/www/html
+
+sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-0e3c02f45d8f1bfb5.efs.ap-south-1.amazonaws.com:/ var/www/html
+
+=> Capstone Project 
+https://youtu.be/Oj-Hr_aulKA?si=FQKTr7XYTsiANeJl
+
+
+Pending Topics:
+VPC (3)
+Cloud Front
+Cloud Watch
+Dynamo DB
+Secrets Manager
+Security Hub
+Storage Gateway
+Code Suite Services
+Lambda
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
