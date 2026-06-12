@@ -1,0 +1,71 @@
+AWS Module - Day 07
+============================
+Cluster Upgrade: https://youtu.be/_AI8KAZEBQU?si=R7ToL-zG6kCAAIbH
+
+
+=> EventBridge
+
+It is a serverless service that makes it easy to connect applications together 
+
+Core Concepts;
+Events	- an event is anything that happens in the S3 bucket - JSON Format
+Event Bus - which transports the events - default event bus
+Rules - a rule is a filter
+Targets - SNS
+
+S3 + EventBridge + SNS
+
+=> Cloud Trial
+
+=> S3 Object Lock
+It is a feature that prevents objects stored in S3 from being deleted or overwritten
+WORM - Write Once, Read Many
+
+Retention Modes;
+it is used to control how strictly the lock is enforced and who can override it
+Governance Mode
+It protects objects against deletion and overwrites, but allows specially privileged IAM users to override the permissions
+Root User		- admin level permissions
+IAM User 1		- who have limited permissions
+IAM User 2		- who have delete permissions
+
+Compliance Mode
+no user can delete or override the object
+
+Retention Period 
+it is a fixed duration during which the object is protected - the protection automatically expires when the retention date is reached
+days/years
+
+Legal Hold
+it is an on/off switch that protects - with no expiry date
+
+=> S3 Access Points
+
+=> RDS 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
