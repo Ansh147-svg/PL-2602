@@ -1,0 +1,81 @@
+AWS Module - Day 09
+============================
+=> Virtual Private Cloud (VPC)
+
+What is a network?
+A network is a collection of devices (computers, laptops, servers, printers....) that can communicate with each other by exchanging data.
+Networks can be;
+	LAN	- Local Area Network		- devices in the same physical location (your home WiFi, Office)
+	WAN	- Wide Area Network			- networks spread across large distances, connected together (internet)
+	VPN	- Virtual Private Network		- A private connection to make remote devices behave as if they are on a local network
+
+IP Addresses:
+IP - Internet Protocol
+An IP address is a unique numerical label assigned to every device on a network
+
+Types;
+IPv4	- Current Standard	- 32 bit size - 4 groups of decimal numbers separated by dots (192.168.1.100) 
+IPv6	- Future				- 128 bit size - 
+
+Each group is called an OCTET (8 bits)
+4.3 Billion
+
+340 undecillion
+
+Public IP - It is used to connect with a device using 3rd part softwares
+Private IP - It is used for internal communication b/w servers
+
+CIDR - Classless Inter Domain Range/Routing
+
+2^n-1
+
+5 IPs will be reserved by AWS (first 4 and the last 1 in the range will be reserved by AWS)
+Network Address
+AWS VPC Router
+AWS DNS Resolver
+Reserved for future AWS use
+Broadcast Address
+
+/8		- 16,777,216 IPs		- 16,777,211
+/16		- 65,536 IPs			- 65,531
+/20		- 4096
+/24		- 256
+/26		- 64
+/27		- 32
+/28		- 16
+/32		- 1 IP
+
+Anywhere IPv4 ----> 0.0.0.0/0
+
+Ports and Protocols
+8080	- Jenkins/Tomcat
+9000	- SonarQube
+
+Protocols
+TCP								UDP
+Transmission Control Protocol		User Datagram Protocol
+Connection-oriented					Connectionless
+Slower								Faster
+SSH, HTTP, HTTPS, MySQL			Video streaming, gaming
+
+22, 80, 443, 3306, 5432, 6379, 3389
+
+DNS - Domain Name System
+www.google.com ----> 142.250.193.78
+Private DNS
+Public DNS
+
+=> VPC is a region specific service
+
+
+
+
+
+
+
+
+
+
+
+
+
